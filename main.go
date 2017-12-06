@@ -1,13 +1,17 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"strings"
 	//"strconv"
+
+	"./exchanges"
 )
 
-var Props = make(map[string]string)
+// holds environment variables
+// such as api endpoints and their keys
+var props = make(map[string]string)
 
 func check(e error) {
 	if e != nil {
@@ -17,6 +21,7 @@ func check(e error) {
 
 func init() {
 
+	// process environment variables
 	dat, err := ioutil.ReadFile(".env")
 	check(err)
 
@@ -24,13 +29,16 @@ func init() {
 
 	for _, l := range lines {
 		split := strings.Split(l,"=")
-		Props[split[0]] = split[1]
+		props[split[0]] = split[1]
 	}
-	
+
+	// initialize exchange packages
+	binance.Initialize(props["BINANCE_URL"], props["BINANCE_Key"], props["BINANCE_SECRET"])
+
 }
 
 func main() {
 
-	fmt.Println(Props)
+	binance.Test()
 
 }
