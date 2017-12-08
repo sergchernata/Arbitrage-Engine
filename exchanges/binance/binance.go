@@ -8,6 +8,7 @@ import (
 	"net/http"
 	//"net/url"
 	//"reflect"
+	"strings"
 )
 
 var api_url, api_key, api_secret string
@@ -34,8 +35,10 @@ func Get_price(tokens map[string]bool) map[string]string {
 		row := v.(map[string]interface{})
 		symbol := row["symbol"].(string)
 		price := row["price"].(string)
+		is_eth_pair := strings.HasSuffix(symbol, "ETH")
+		token := strings.TrimSuffix(symbol, "ETH")
 
-		if tokens[symbol] {
+		if is_eth_pair && tokens[token] {
 			prices[symbol] = price
 		}
 	}
