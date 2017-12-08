@@ -38,9 +38,12 @@ func init() {
 
 	lines := strings.Split(string(dat), "\n")
 
-	for _, l := range lines {
-		split := strings.Split(l, "=")
-		props[split[0]] = split[1]
+	for _, line := range lines {
+		// check for blank lines in .env config
+		if line != "" {
+			split := strings.Split(line, "=")
+			props[split[0]] = split[1]
+		}
 	}
 
 	// initialize exchange packages
