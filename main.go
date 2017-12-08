@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	//"strconv"
@@ -12,6 +12,13 @@ import (
 // holds environment variables
 // such as api endpoints and their keys
 var props = make(map[string]string)
+
+// golang doesn't like detecting value existance within an array
+// giving every key a boolean makes for easy checks of existance
+var tokens = map[string]bool{
+	"NULSETH": true,
+	"LINKETH": true,
+}
 
 func check(e error) {
 	if e != nil {
@@ -39,6 +46,6 @@ func init() {
 
 func main() {
 
-	binance.Get_price("LINKETH")
+	fmt.Println(binance.Get_price(tokens))
 
 }

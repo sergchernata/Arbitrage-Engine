@@ -1,12 +1,13 @@
 package binance
 
 import (
-	//"encoding/json"
-	"fmt"
+	"encoding/json"
+	//"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	//"net/url"
+	//"reflect"
 )
 
 var api_url, api_key, api_secret string
@@ -19,20 +20,32 @@ func Initialize(url string, key string, secret string) {
 
 }
 
-func Get_price(token string) {
+func Get_price(tokens map[string]bool) map[string]string {
 
-	endpoint := "/api/v3/ticker/price"
+	var endpoint = "/api/v3/ticker/price"
+	var data []interface{}
+	var prices = make(map[string]string)
 
-	execute(api_url + endpoint)
+	data = execute(api_url + endpoint)
 
+	for _, v := range data {
+		row := v.(map[string]interface{})
+		symbol := row["symbol"].(string)
+		price := row["price"].(string)
+
+		if tokens[symbol] {
+			prices[symbol] = price
+		}
+	}
+
+	return prices
 }
 
-func execute(url string) {
+func execute(url string) []interface{} {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal("NewRequest: ", err)
-		return
 	}
 
 	req.Header.Set("User-Agent", "test")
@@ -42,7 +55,6 @@ func execute(url string) {
 	res, err := client.Do(req)
 	if err != nil {
 		log.Fatal("Do: ", err)
-		return
 	}
 
 	defer res.Body.Close()
@@ -52,6 +64,15 @@ func execute(url string) {
 		log.Fatal(readErr)
 	}
 
-	fmt.Println(string(body))
+	// general interface
+	// decode json without a predefined structure
+	var data []interface{}
+
+	jsonErr := json.Unmarshal(body, &data)
+	if jsonErr != nil {
+		log.Fatal(jsonErr)
+	}
+
+	return data
 
 }
