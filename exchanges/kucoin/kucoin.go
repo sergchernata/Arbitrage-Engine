@@ -1,9 +1,7 @@
 package kucoin
 
 import (
-
 	"fmt"
-
 )
 
 var url, key, secret string
@@ -19,5 +17,5 @@ func Initialize(api_url string, api_key string, api_secret string) {
 func Test() {
 
 	fmt.Println(url)
-	
+
 }

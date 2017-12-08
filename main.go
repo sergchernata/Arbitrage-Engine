@@ -28,12 +28,12 @@ func init() {
 	lines := strings.Split(string(dat), "\n")
 
 	for _, l := range lines {
-		split := strings.Split(l,"=")
+		split := strings.Split(l, "=")
 		props[split[0]] = split[1]
 	}
 
 	// initialize exchange packages
-	binance.Initialize(props["BINANCE_URL"], props["BINANCE_Key"], props["BINANCE_SECRET"])
+	binance.Initialize(props["BINANCE_URL"], props["BINANCE_KEY"], props["BINANCE_SECRET"])
 
 }
 
