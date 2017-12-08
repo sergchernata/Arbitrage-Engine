@@ -54,7 +54,7 @@ func init() {
 
 func main() {
 
-	fmt.Println(binance.Get_price(tokens))
+	//fmt.Println(binance.Get_price(tokens))
 	fmt.Println(kucoin.Get_price(tokens))
 
 }
