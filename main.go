@@ -6,7 +6,7 @@ import (
 	"strings"
 	//"strconv"
 
-	"./exchanges"
+	"./exchanges/binance"
 )
 
 // holds environment variables
@@ -39,6 +39,6 @@ func init() {
 
 func main() {
 
-	binance.Test()
+	binance.Get_price("LINKETH")
 
 }
