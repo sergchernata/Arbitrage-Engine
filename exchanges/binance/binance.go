@@ -26,8 +26,10 @@ func Get_price(tokens map[string]bool) map[string]string {
 	var data []interface{}
 	var prices = make(map[string]string)
 
+	// perform api call
 	data = execute(api_url + endpoint)
 
+	// parse data and format for return
 	for _, v := range data {
 		row := v.(map[string]interface{})
 		symbol := row["symbol"].(string)

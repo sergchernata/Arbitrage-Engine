@@ -6,7 +6,9 @@ import (
 	"strings"
 	//"strconv"
 
+	// individual exchange packages
 	"./exchanges/binance"
+	//"./exchanges/kucoin"
 )
 
 // holds environment variables
@@ -41,6 +43,7 @@ func init() {
 
 	// initialize exchange packages
 	binance.Initialize(props["BINANCE_URL"], props["BINANCE_KEY"], props["BINANCE_SECRET"])
+	//kucoin.Initialize(props["KUCOIN_URL"], props["KUCOIN_KEY"], props["KUCOIN_SECRET"])
 
 }
 
