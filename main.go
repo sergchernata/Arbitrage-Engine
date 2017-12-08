@@ -20,6 +20,8 @@ var props = make(map[string]string)
 var tokens = map[string]bool{
 	"NULSETH": true,
 	"LINKETH": true,
+	"REQETH":  true,
+	"NEOETH":  true,
 }
 
 func check(e error) {
