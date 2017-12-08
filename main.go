@@ -18,10 +18,10 @@ var props = make(map[string]string)
 // golang doesn't like detecting value existance within an array
 // giving every key a boolean makes for easy checks of existance
 var tokens = map[string]bool{
-	"NULSETH": true,
-	"LINKETH": true,
-	"REQETH":  true,
-	"NEOETH":  true,
+	"NULS": true,
+	"LINK": true,
+	"REQ":  true,
+	"NEO":  true,
 }
 
 func check(e error) {
