@@ -43,6 +43,8 @@ func Get_price(tokens map[string]bool) map[string]string {
 	//parse data and format for return
 	for _, v := range data.Prices {
 
+		// kucoin formats pairs as "LINK-ETH"
+		// this will be the format we convert others to
 		symbol := v.Symbol
 		price := string(v.Price)
 		is_eth_pair := strings.HasSuffix(symbol, "-ETH")
@@ -79,8 +81,6 @@ func execute(url string) *Data {
 		log.Fatal(readErr)
 	}
 
-	// general interface
-	// decode json without a predefined structure
 	var data = new(Data)
 
 	jsonErr := json.Unmarshal(body, &data)
