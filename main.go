@@ -9,6 +9,9 @@ import (
 	// individual exchange packages
 	"./exchanges/binance"
 	"./exchanges/kucoin"
+
+	// database package
+	"./db/mongo"
 )
 
 // holds environment variables
@@ -46,6 +49,9 @@ func init() {
 		}
 	}
 
+	// initialize database connection
+	mongo.Initialize(props["HOST"], props["DATABASE"], props["USERNAME"], props["PASSWORD"])
+
 	// initialize exchange packages
 	binance.Initialize(props["BINANCE_URL"], props["BINANCE_KEY"], props["BINANCE_SECRET"])
 	kucoin.Initialize(props["KUCOIN_URL"], props["KUCOIN_KEY"], props["KUCOIN_SECRET"])
@@ -56,5 +62,11 @@ func main() {
 
 	fmt.Println(binance.Get_price(tokens))
 	fmt.Println(kucoin.Get_price(tokens))
+
+}
+
+func save_prices() {
+
+	mongo.Query()
 
 }
