@@ -3,8 +3,8 @@ package mongo
 import (
 	"fmt"
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"log"
+	//"gopkg.in/mgo.v2/bson"
+	//"log"
 )
 
 func Initialize(host string, database string, username string, password string) {
