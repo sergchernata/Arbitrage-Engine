@@ -9,17 +9,33 @@ import (
 
 func Initialize(host string, database string, username string, password string) {
 
-	mongoDBDialInfo := &mgo.DialInfo{
-		Addrs:    []string{host},
-		Database: database,
-		Username: username,
-		Password: password,
-	}
+	// not sure why this doesn't work
+	// seems to do with the database
+	// being used for user authentication
+	//
+	// mongoDBDialInfo := &mgo.DialInfo{
+	// 	Addrs:    []string{host},
+	// 	Database: database,
+	// 	Username: username,
+	// 	Password: password,
+	// 	Timeout:  60 * time.Second,
+	// }
 
-	session, err := mgo.DialWithInfo(mongoDBDialInfo)
+	// session, err := mgo.DialWithInfo(mongoDBDialInfo)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	session, err := mgo.Dial(host)
 	if err != nil {
 		panic(err)
 	}
+
+	err = session.DB("admin").Login(username, password)
+	if err != nil {
+		panic(err)
+	}
+
 	defer session.Close()
 
 	// Optional. Switch the session to a monotonic behavior.
