@@ -1,11 +1,23 @@
 package mongo
 
 import (
-	"fmt"
+	//"fmt"
 	"gopkg.in/mgo.v2"
-	//"gopkg.in/mgo.v2/bson"
+	"gopkg.in/mgo.v2/bson"
+	"time"
 	//"log"
 )
+
+var mgoSession *mgo.Session
+var mgoDatabase string
+
+type Price struct {
+	ID        bson.ObjectId `bson:"_id,omitempty"`
+	Token     string
+	Price     string
+	Exchange  string
+	Timestamp time.Time
+}
 
 func Initialize(host string, database string, username string, password string) {
 
@@ -36,30 +48,35 @@ func Initialize(host string, database string, username string, password string) 
 		panic(err)
 	}
 
-	defer session.Close()
+	//defer session.Close()
 
 	// Optional. Switch the session to a monotonic behavior.
 	session.SetMode(mgo.Monotonic, true)
-
-	fmt.Println("connected")
+	mgoSession = session
+	mgoDatabase = database
 
 }
 
-func Query() {
+func SavePrices(tokens map[string]string, exchange string) {
 
-	// c := session.DB("test").C("people")
-	// err = c.Insert(&Person{"Ale", "+55 53 8116 9639"},
-	//  &Person{"Cla", "+55 53 8402 8510"})
-	// if err != nil {
-	//  log.Fatal(err)
-	// }
+	session := mgoSession.Clone()
+	defer session.Close()
 
-	// result := Person{}
-	// err = c.Find(bson.M{"name": "Ale"}).One(&result)
-	// if err != nil {
-	//  log.Fatal(err)
-	// }
+	collection := session.DB(mgoDatabase).C("prices")
 
-	// fmt.Println("Phone:", result.Phone)
+	for token, price := range tokens {
+
+		row := Price{
+			Token:     token,
+			Price:     price,
+			Exchange:  exchange,
+			Timestamp: time.Now(),
+		}
+
+		if err := collection.Insert(row); err != nil {
+			panic(err)
+		}
+
+	}
 
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"strings"
 	//"strconv"
@@ -60,13 +60,11 @@ func init() {
 
 func main() {
 
-	fmt.Println(binance.Get_price(tokens))
-	fmt.Println(kucoin.Get_price(tokens))
+	mongo.SavePrices(binance.Get_price(tokens), "Binance")
+	mongo.SavePrices(kucoin.Get_price(tokens), "KuCoin")
 
 }
 
 func save_prices() {
-
-	mongo.Query()
 
 }
