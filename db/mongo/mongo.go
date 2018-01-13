@@ -2,6 +2,7 @@ package mongo
 
 import (
 	//"fmt"
+	// go get gopkg.in/mgo.v2
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"time"
