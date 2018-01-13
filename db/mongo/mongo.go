@@ -57,7 +57,7 @@ func Initialize(host string, database string, username string, password string) 
 
 }
 
-func SavePrices(tokens map[string]string, exchange string) {
+func Save_prices(tokens map[string]string, exchange string) {
 
 	session := mgoSession.Clone()
 	defer session.Close()

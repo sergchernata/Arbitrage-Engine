@@ -60,8 +60,11 @@ func init() {
 
 func main() {
 
-	mongo.SavePrices(binance.Get_price(tokens), "Binance")
-	mongo.SavePrices(kucoin.Get_price(tokens), "KuCoin")
+	binance_prices := binance.Get_price(tokens)
+	kucoin_prices := kucoin.Get_price(tokens)
+
+	mongo.Save_prices(binance_prices)
+	mongo.Save_prices(kucoin_prices)
 
 }
 
