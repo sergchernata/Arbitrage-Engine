@@ -7,12 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"time"
-	//"net/url"
-	//"reflect"
 	"strings"
+	"time"
 )
 
 var api_url, api_key, api_secret string
@@ -38,6 +35,8 @@ func check(e error) {
 }
 
 func Initialize(url string, key string, secret string) {
+
+	fmt.Println("initializing binance package")
 
 	api_url = url
 	api_key = key
@@ -83,10 +82,8 @@ func Get_price(tokens map[string]bool) map[string]string {
 	// perform api call
 	body = execute("GET", api_url+endpoint, false)
 
-	jsonErr := json.Unmarshal(body, &data)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
+	err := json.Unmarshal(body, &data)
+	check(err)
 
 	// parse data and format for return
 	for _, v := range *data {
@@ -118,9 +115,7 @@ func Sell(token string) (transaction_id string, sell_placed bool) {
 func execute(method string, url string, auth bool) []byte {
 
 	req, err := http.NewRequest(method, url, nil)
-	if err != nil {
-		log.Fatal("NewRequest: ", err)
-	}
+	check(err)
 
 	req.Header.Set("User-Agent", "test")
 	req.Header.Add("Accept", "application/json")
