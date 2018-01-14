@@ -1,19 +1,32 @@
 package kucoin
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
-	//"fmt"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"strconv"
 	"strings"
-	//"net/url"
-	//"reflect"
+	"time"
 )
 
 var api_url, api_key, api_secret string
 
-type Data struct {
+type Holdings struct {
+	Holding Holding `json:"data"`
+	Success bool    `json:"success"`
+}
+
+type Holding struct {
+	Symbol string `json:"coinType"`
+	Amount string `json:"balanceStr,Number"`
+}
+
+type Prices struct {
 	Prices  []Price `json:"data"`
 	Success bool    `json:"success"`
 }
@@ -23,7 +36,15 @@ type Price struct {
 	Price  json.Number `json:"lastDealPrice,Number"`
 }
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 func Initialize(url string, key string, secret string) {
+
+	fmt.Println("initializing kucoin package")
 
 	api_url = url
 	api_key = key
@@ -31,14 +52,41 @@ func Initialize(url string, key string, secret string) {
 
 }
 
+func Get_balances(tokens map[string]bool) map[string]string {
+
+	var holdings = make(map[string]string)
+	var body []byte
+
+	for token, _ := range tokens {
+
+		var data = new(Holdings)
+		var endpoint = "/v1/account/" + token + "/balance"
+
+		// perform api call
+		body = execute("GET", api_url, endpoint, true)
+
+		err := json.Unmarshal(body, &data)
+		check(err)
+
+		holdings[data.Holding.Symbol] = data.Holding.Amount
+
+	}
+
+	return holdings
+}
+
 func Get_price(tokens map[string]bool) map[string]string {
 
 	var endpoint = "/v1/open/tick"
-	var data *Data
+	var data = new(Prices)
 	var prices = make(map[string]string)
+	var body []byte
 
 	// perform api call
-	data = execute(api_url + endpoint)
+	body = execute("GET", api_url, endpoint, false)
+
+	err := json.Unmarshal(body, &data)
+	check(err)
 
 	//parse data and format for return
 	for _, v := range data.Prices {
@@ -58,36 +106,56 @@ func Get_price(tokens map[string]bool) map[string]string {
 	return prices
 }
 
-func execute(url string) *Data {
+func Sell(token string) (transaction_id string, sell_placed bool) {
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatal("NewRequest: ", err)
-	}
+	transaction_id = ""
+	sell_placed = false
+
+	return transaction_id, sell_placed
+
+}
+
+func execute(method string, url string, endpoint string, auth bool) []byte {
+
+	req, err := http.NewRequest(method, url+endpoint, nil)
+	check(err)
 
 	req.Header.Set("User-Agent", "test")
+	req.Header.Add("Accept", "application/json")
+
+	if auth {
+
+		queryString := ""
+		timestamp := strconv.Itoa(int(time.Now().Unix() * 1000))
+
+		//splice string for signing
+		strForSign := endpoint + "/" + timestamp + "/" + queryString
+
+		//Make a base64 encoding of the completed string
+		signatureStr := base64.StdEncoding.EncodeToString([]byte(strForSign))
+
+		mac := hmac.New(sha256.New, []byte(api_secret))
+		_, err := mac.Write([]byte(signatureStr))
+		check(err)
+
+		signature := hex.EncodeToString(mac.Sum(nil))
+
+		req.Header.Add("KC-API-KEY", api_key)
+		req.Header.Add("KC-API-NONCE", timestamp)
+		req.Header.Add("KC-API-SIGNATURE", signature)
+
+	}
 
 	client := &http.Client{}
 
 	res, err := client.Do(req)
-	if err != nil {
-		log.Fatal("Do: ", err)
-	}
+	check(err)
 
 	defer res.Body.Close()
 
-	body, readErr := ioutil.ReadAll(res.Body)
-	if readErr != nil {
-		log.Fatal(readErr)
-	}
+	body, err := ioutil.ReadAll(res.Body)
+	check(err)
 
-	var data = new(Data)
-
-	jsonErr := json.Unmarshal(body, &data)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	return data
+	return body
 
 }
