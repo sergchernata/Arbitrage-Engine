@@ -20,6 +20,12 @@ type Price struct {
 	Timestamp time.Time
 }
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 func Initialize(host string, database string, username string, password string) {
 
 	// not sure why this doesn't work
@@ -40,14 +46,10 @@ func Initialize(host string, database string, username string, password string) 
 	// }
 
 	session, err := mgo.Dial(host)
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 
 	err = session.DB("admin").Login(username, password)
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 
 	//defer session.Close()
 
