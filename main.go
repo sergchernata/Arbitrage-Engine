@@ -79,20 +79,33 @@ func compare_prices(binance, kucoin map[string]string) {
 
 		pair := token + "-ETH"
 
+		// not every exchange trades the same tokens
+		// check if the token at hand is present on both
 		binance_value, binance_ok := binance[pair]
 		kucoin_value, kucoin_ok := kucoin[pair]
 
 		if binance_ok && kucoin_ok {
 
+			// string to float conversion
 			binance_float, err := strconv.ParseFloat(binance_value, 64)
 			kucoin_float, err := strconv.ParseFloat(kucoin_value, 64)
+			check(err)
 
-			if err != nil {
-				panic(err)
-			}
-
+			// calculte percentage difference
 			difference := (1 - binance_float/kucoin_float) * 100
 			fmt.Println(pair, difference, "Binance: ", binance_float, "KuCoin: ", kucoin_float)
+
+			if binance_float > kucoin_float {
+				exchange := "binance"
+			} else {
+				exchange := "kucoin"
+			}
+
+			// check if difference is over the thershold
+			// if so, trigger the sell
+			if difference >= props["PERCENT_THRESHOLD"] {
+				sell(token, exchange)
+			}
 
 		}
 
@@ -101,6 +114,25 @@ func compare_prices(binance, kucoin map[string]string) {
 }
 
 // start transaction, selling high
+func sell(token, exchange string) {
+
+	sell_placed := false
+	transaction_id := ""
+
+	switch exchange {
+	case "binance":
+		transaction_id, sell_placed = binance.Sell(token)
+	case "kucoin":
+		transaction_id, sell_placed = kucoin.Sell(token)
+	default:
+		panic("Exchange selection not provided or doesn't match available choices.")
+	}
+
+	if sell_placed {
+		mongo.Create_transaction(token, exchange, transaction_id)
+	}
+
+}
 
 // check transaction progress
 // if sale is complete, transfer ETH to exchange with lowest price
