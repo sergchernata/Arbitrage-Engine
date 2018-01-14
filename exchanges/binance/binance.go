@@ -19,12 +19,11 @@ var api_url, api_key, api_secret string
 
 type Holdings struct {
 	Holdings []Holding `json:"balances"`
-	Success  bool      `json:"success"`
 }
 
-type Holding []struct {
+type Holding struct {
 	Symbol string `json:"asset"`
-	Amount string `json:"free"`
+	Amount string `json:"free,Number"`
 }
 
 type Prices []struct {
@@ -55,11 +54,20 @@ func Get_balances(tokens map[string]bool) map[string]string {
 
 	// perform api call
 	body = execute("GET", api_url+endpoint, true)
-	fmt.Println(string(body))
+
 	err := json.Unmarshal(body, &data)
 	check(err)
 
-	fmt.Println(data)
+	// remove tokens that we don't care about
+	for _, v := range data.Holdings {
+
+		symbol := v.Symbol
+		amount := v.Amount
+
+		if tokens[symbol] {
+			holdings[symbol] = amount
+		}
+	}
 
 	return holdings
 
