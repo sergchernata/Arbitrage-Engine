@@ -14,6 +14,10 @@ import (
 
 var api_url, api_key, api_secret string
 
+type Order struct {
+	Id string `json:"orderId"`
+}
+
 type Holdings struct {
 	Holdings []Holding `json:"balances"`
 }
@@ -103,12 +107,24 @@ func Get_price(tokens map[string]bool) map[string]string {
 	return prices
 }
 
-func Sell(token string) (transaction_id string, sell_placed bool) {
+func Sell(token string, quantity int) (transaction_id string, sell_placed bool) {
 
-	transaction_id = ""
-	sell_placed = false
+	token += "ETH"
+	var endpoint = fmt.Sprintf("/api/v3/order?symbol=%s&side=%s&type=%s&quantity=%d", token, "SELL", "MARKET", quantity)
+	var data = new(Order)
+	var body []byte
 
-	return transaction_id, sell_placed
+	// perform api call
+	body = execute("POST", api_url+endpoint, true)
+
+	err := json.Unmarshal(body, &data)
+	check(err)
+
+	if data.Id == "" {
+		return "", false
+	}
+
+	return data.Id, true
 
 }
 
