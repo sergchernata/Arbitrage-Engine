@@ -85,18 +85,18 @@ func init() {
 
 func main() {
 
-	binance_prices := binance.Get_price(tokens)
-	kucoin_prices := kucoin.Get_price(tokens)
+	//binance_prices := binance.Get_price(tokens)
+	//kucoin_prices := kucoin.Get_price(tokens)
 
-	binance_balances := binance.Get_balances(tokens)
-	kucoin_balances := kucoin.Get_balances(tokens)
+	// binance_balances := binance.Get_balances(tokens)
+	// kucoin_balances := kucoin.Get_balances(tokens)
+	binance.Sell("NULS", trade_quantity["NULS"])
+	// fmt.Println(binance_balances, kucoin_balances)
 
-	fmt.Println(binance_balances, kucoin_balances)
+	// // exclude tokens that are already being transacted or transfered
+	//exclude := check_balances(binance_balances)
 
-	// exclude tokens that are already being transacted or transfered
-	exclude := check_balances(binance_balances)
-
-	compare_prices(binance_prices, kucoin_prices, exclude)
+	//compare_prices(binance_prices, kucoin_prices, exclude)
 
 	// mongo.Save_prices(binance_prices)
 	// mongo.Save_prices(kucoin_prices)
@@ -140,15 +140,12 @@ func compare_prices(binance, kucoin map[string]string, exclude map[string]bool) 
 
 			if difference >= percent_threshold {
 
-				exchange := ""
-
 				if binance_float > kucoin_float {
-					exchange = "binance"
+					sell(token, "binance", binance_float)
 				} else {
-					exchange = "kucoin"
+					sell(token, "kucoin", kucoin_float)
 				}
 
-				sell(token, exchange)
 			}
 
 		}
@@ -158,16 +155,16 @@ func compare_prices(binance, kucoin map[string]string, exclude map[string]bool) 
 }
 
 // start transaction, selling high
-func sell(token, exchange string) {
+func sell(token, exchange string, price float64) {
 
 	sell_placed := false
 	transaction_id := ""
 
 	switch exchange {
 	case "binance":
-		transaction_id, sell_placed = binance.Sell(token)
+		transaction_id, sell_placed = binance.Sell(token, trade_quantity[token], price)
 	case "kucoin":
-		transaction_id, sell_placed = kucoin.Sell(token)
+		transaction_id, sell_placed = kucoin.Sell(token, trade_quantity[token], price)
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
 	}
