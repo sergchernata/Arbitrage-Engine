@@ -118,8 +118,8 @@ func Get_price(tokens map[string]bool) map[string]string {
 func Sell(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
 	token += "-ETH"
-	var params = fmt.Sprintf("amount=%d&price=%f&type=%s&symbol=%s", quantity, price, "SELL", token)
-	var endpoint = "/v1/order?"
+	var params = fmt.Sprintf("amount=%d&price=%f&symbol=%s&type=%s", quantity, price, token, "SELL")
+	var endpoint = "/v1/order"
 	var order = new(Order)
 	var body []byte
 
@@ -139,7 +139,7 @@ func Sell(token string, quantity int, price float64) (transaction_id string, sel
 
 func execute(method string, url string, endpoint string, params string, auth bool) []byte {
 
-	req, err := http.NewRequest(method, url+endpoint, nil)
+	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
 	check(err)
 
 	req.Header.Set("User-Agent", "test")
