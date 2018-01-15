@@ -107,10 +107,10 @@ func Get_price(tokens map[string]bool) map[string]string {
 	return prices
 }
 
-func Sell(token string, quantity int) (transaction_id string, sell_placed bool) {
+func Sell(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
 	token += "ETH"
-	var endpoint = fmt.Sprintf("/api/v3/order?symbol=%s&side=%s&type=%s&quantity=%d", token, "SELL", "MARKET", quantity)
+	var endpoint = fmt.Sprintf("/api/v3/order?symbol=%s&side=%s&type=%s&quantity=%d&price=%f", token, "SELL", "MARKET", quantity, price)
 	var data = new(Order)
 	var body []byte
 
