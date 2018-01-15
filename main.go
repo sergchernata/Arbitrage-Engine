@@ -54,10 +54,16 @@ func init() {
 				no_spaces := strings.Replace(split[1], " ", "", -1)
 				pairs := strings.Split(no_spaces, ",")
 
+				// parse tokens and trade quantities
 				for _, pair := range pairs {
 					temp := strings.Split(pair, ":")
-					tokens[temp[0]] = true
-					trade_quantity[temp[0]], _ = strconv.Atoi(temp[1])
+					quantity, _ := strconv.Atoi(temp[1])
+
+					// tokens with trade quantity of 0 are to be ignored
+					if quantity > 0 {
+						tokens[temp[0]] = true
+						trade_quantity[temp[0]], _ = strconv.Atoi(temp[1])
+					}
 				}
 
 			} else {
