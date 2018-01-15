@@ -19,14 +19,14 @@ import (
 // such as api endpoints and their keys
 var props = make(map[string]string)
 
-// golang doesn't like detecting value existance within an array
+// golang doesn't like detecting existance of key within an array
 // giving every key a boolean makes for easy checks of existance
-var tokens = map[string]bool{
-	"NULS": true,
-	"LINK": true,
-	"REQ":  true,
-	"NEO":  true,
-}
+// each key is a token symbol, ie REQ, LINK, etc
+var tokens = make(map[string]bool)
+
+// each key is a token symbol, matching the array of tokens above
+// each value is the number of tokens to be sold at once per trade
+var trade_quantity = make(map[string]int)
 
 func check(e error) {
 	if e != nil {
@@ -36,7 +36,7 @@ func check(e error) {
 
 func init() {
 
-	fmt.Println("initializing...")
+	fmt.Println("initializing main package")
 
 	// process environment variables
 	dat, err := ioutil.ReadFile(".env")
@@ -48,7 +48,23 @@ func init() {
 		// check for blank and comment lines in .env config
 		if line != "" && !strings.HasPrefix(line, "#") {
 			split := strings.Split(line, "=")
-			props[split[0]] = split[1]
+
+			if split[0] == "TOKENS" {
+
+				no_spaces := strings.Replace(split[1], " ", "", -1)
+				pairs := strings.Split(no_spaces, ",")
+
+				for _, pair := range pairs {
+					temp := strings.Split(pair, ":")
+					tokens[temp[0]] = true
+					trade_quantity[temp[0]], _ = strconv.Atoi(temp[1])
+				}
+
+			} else {
+
+				props[split[0]] = split[1]
+
+			}
 		}
 	}
 
@@ -66,14 +82,30 @@ func main() {
 	binance_prices := binance.Get_price(tokens)
 	kucoin_prices := kucoin.Get_price(tokens)
 
-	compare_prices(binance_prices, kucoin_prices)
+	binance_balances := binance.Get_balances(tokens)
+	kucoin_balances := kucoin.Get_balances(tokens)
+
+	fmt.Println(binance_balances, kucoin_balances)
+
+	// exclude tokens that are already being transacted or transfered
+	exclude := check_balances(binance_balances)
+
+	compare_prices(binance_prices, kucoin_prices, exclude)
 
 	// mongo.Save_prices(binance_prices)
 	// mongo.Save_prices(kucoin_prices)
 
 }
 
-func compare_prices(binance, kucoin map[string]string) {
+func check_balances(binance map[string]string) map[string]bool {
+
+	var exclude = make(map[string]bool)
+
+	return exclude
+
+}
+
+func compare_prices(binance, kucoin map[string]string, exclude map[string]bool) {
 
 	for token := range tokens {
 
@@ -95,15 +127,21 @@ func compare_prices(binance, kucoin map[string]string) {
 			difference := (1 - binance_float/kucoin_float) * 100
 			fmt.Println(pair, difference, "Binance: ", binance_float, "KuCoin: ", kucoin_float)
 
-			if binance_float > kucoin_float {
-				exchange := "binance"
-			} else {
-				exchange := "kucoin"
-			}
-
 			// check if difference is over the thershold
 			// if so, trigger the sell
-			if difference >= props["PERCENT_THRESHOLD"] {
+			percent_threshold, err := strconv.ParseFloat(props["PERCENT_THRESHOLD"], 64)
+			check(err)
+
+			if difference >= percent_threshold {
+
+				exchange := ""
+
+				if binance_float > kucoin_float {
+					exchange = "binance"
+				} else {
+					exchange = "kucoin"
+				}
+
 				sell(token, exchange)
 			}
 
