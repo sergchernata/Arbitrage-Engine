@@ -16,6 +16,13 @@ import (
 
 var api_url, api_key, api_secret string
 
+type Order struct {
+	Success bool `json:"success"`
+	Data    struct {
+		Id string `json:"orderOid"`
+	} `json:"data"`
+}
+
 type Holdings struct {
 	Holding Holding `json:"data"`
 	Success bool    `json:"success"`
@@ -61,9 +68,10 @@ func Get_balances(tokens map[string]bool) map[string]string {
 
 		var data = new(Holdings)
 		var endpoint = "/v1/account/" + token + "/balance"
+		var params = ""
 
 		// perform api call
-		body = execute("GET", api_url, endpoint, true)
+		body = execute("GET", api_url, endpoint, params, true)
 
 		err := json.Unmarshal(body, &data)
 		check(err)
@@ -77,13 +85,14 @@ func Get_balances(tokens map[string]bool) map[string]string {
 
 func Get_price(tokens map[string]bool) map[string]string {
 
+	var params = ""
 	var endpoint = "/v1/open/tick"
 	var data = new(Prices)
 	var prices = make(map[string]string)
 	var body []byte
 
 	// perform api call
-	body = execute("GET", api_url, endpoint, false)
+	body = execute("GET", api_url, endpoint, params, false)
 
 	err := json.Unmarshal(body, &data)
 	check(err)
@@ -106,16 +115,29 @@ func Get_price(tokens map[string]bool) map[string]string {
 	return prices
 }
 
-func Sell(token string) (transaction_id string, sell_placed bool) {
+func Sell(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
-	transaction_id = ""
-	sell_placed = false
+	token += "-ETH"
+	var params = fmt.Sprintf("amount=%d&price=%f&type=%s&symbol=%s", quantity, price, "SELL", token)
+	var endpoint = "/v1/order?"
+	var order = new(Order)
+	var body []byte
 
-	return transaction_id, sell_placed
+	// perform api call
+	body = execute("POST", api_url, endpoint, params, true)
+
+	err := json.Unmarshal(body, &order)
+	check(err)
+
+	if order.Data.Id == "" {
+		return "", false
+	}
+
+	return order.Data.Id, true
 
 }
 
-func execute(method string, url string, endpoint string, auth bool) []byte {
+func execute(method string, url string, endpoint string, params string, auth bool) []byte {
 
 	req, err := http.NewRequest(method, url+endpoint, nil)
 	check(err)
@@ -125,11 +147,10 @@ func execute(method string, url string, endpoint string, auth bool) []byte {
 
 	if auth {
 
-		queryString := ""
 		timestamp := strconv.Itoa(int(time.Now().Unix() * 1000))
 
 		//splice string for signing
-		strForSign := endpoint + "/" + timestamp + "/" + queryString
+		strForSign := endpoint + "/" + timestamp + "/" + params
 
 		//Make a base64 encoding of the completed string
 		signatureStr := base64.StdEncoding.EncodeToString([]byte(strForSign))
