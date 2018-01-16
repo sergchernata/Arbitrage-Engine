@@ -9,6 +9,7 @@ import (
 
 	// individual exchange packages
 	"./exchanges/binance"
+	"./exchanges/bitz"
 	"./exchanges/kucoin"
 
 	// database package
@@ -80,6 +81,7 @@ func init() {
 	// initialize exchange packages
 	binance.Initialize(props["BINANCE_URL"], props["BINANCE_KEY"], props["BINANCE_SECRET"])
 	kucoin.Initialize(props["KUCOIN_URL"], props["KUCOIN_KEY"], props["KUCOIN_SECRET"])
+	bitz.Initialize(props["BITZ_URL"], props["BITZ_KEY"], props["BITZ_SECRET"], props["BITZ_TRADEPW"])
 
 }
 
@@ -90,7 +92,7 @@ func main() {
 
 	// binance_balances := binance.Get_balances(tokens)
 	// kucoin_balances := kucoin.Get_balances(tokens)
-	binance.Sell("NULS", trade_quantity["NULS"])
+	binance.Sell("NULS", trade_quantity["NULS"], 0.006)
 	// fmt.Println(binance_balances, kucoin_balances)
 
 	// // exclude tokens that are already being transacted or transfered
