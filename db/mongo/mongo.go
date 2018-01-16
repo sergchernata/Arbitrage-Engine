@@ -28,23 +28,6 @@ func check(e error) {
 
 func Initialize(host string, database string, username string, password string) {
 
-	// not sure why this doesn't work
-	// seems to do with the database
-	// being used for user authentication
-	//
-	// mongoDBDialInfo := &mgo.DialInfo{
-	// 	Addrs:    []string{host},
-	// 	Database: database,
-	// 	Username: username,
-	// 	Password: password,
-	// 	Timeout:  60 * time.Second,
-	// }
-
-	// session, err := mgo.DialWithInfo(mongoDBDialInfo)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	session, err := mgo.Dial(host)
 	check(err)
 
@@ -60,6 +43,27 @@ func Initialize(host string, database string, username string, password string) 
 
 }
 
+func Create_transaction(token, exchange, transaction_id, string, price float64) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	row := Price{
+		Token: token,
+		Sell_price: price,
+		Sell_exchange: exchange,
+		Sell_tx_id: transaction_id
+		Timestamp: time.Now(),
+	}
+
+	if err := collection.Insert(row); err != nil {
+		panic(err)
+	}
+
+}
+
 func Save_prices(tokens map[string]string, exchange string) {
 
 	session := mgoSession.Clone()
@@ -70,9 +74,9 @@ func Save_prices(tokens map[string]string, exchange string) {
 	for token, price := range tokens {
 
 		row := Price{
-			Token:     token,
-			Price:     price,
-			Exchange:  exchange,
+			Token: token,
+			Price: price,
+			Exchange: exchange,
 			Timestamp: time.Now(),
 		}
 

@@ -203,7 +203,7 @@ func sell(token, exchange string, price float64) {
 	}
 
 	if sell_placed {
-		mongo.Create_transaction(token, exchange, transaction_id)
+		mongo.Create_transaction(token, exchange, transaction_id, price)
 	}
 
 }
