@@ -89,10 +89,11 @@ func main() {
 
 	//binance_prices := binance.Get_price(tokens)
 	//kucoin_prices := kucoin.Get_price(tokens)
-
+	bitz_prices := bitz.Get_price(tokens)
+	fmt.Println(bitz_prices)
 	// binance_balances := binance.Get_balances(tokens)
 	// kucoin_balances := kucoin.Get_balances(tokens)
-	binance.Sell("NULS", trade_quantity["NULS"], 0.006)
+	//bitz.Sell("NULS", trade_quantity["NULS"], 0.006)
 	// fmt.Println(binance_balances, kucoin_balances)
 
 	// // exclude tokens that are already being transacted or transfered

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var api_url, api_key, api_secret string
+var api_url, api_key, api_secret, api_tradepw string
 
 type Order struct {
 	Success bool `json:"success"`
@@ -47,45 +47,22 @@ func check(e error) {
 	}
 }
 
-func Initialize(url string, key string, secret string) {
+func Initialize(url string, key string, secret string, tradepw string) {
 
-	fmt.Println("initializing kucoin package")
+	fmt.Println("initializing bitz package")
 
 	api_url = url
 	api_key = key
 	api_secret = secret
+	api_tradepw = tradepw
 
-}
-
-func Get_balances(tokens map[string]bool) map[string]string {
-
-	var holdings = make(map[string]string)
-	var body []byte
-
-	for token, _ := range tokens {
-
-		var data = new(Holdings)
-		var endpoint = "/v1/account/" + token + "/balance"
-		var params = ""
-
-		// perform api call
-		body = execute("GET", api_url, endpoint, params, true)
-
-		err := json.Unmarshal(body, &data)
-		check(err)
-
-		holdings[data.Holding.Symbol] = data.Holding.Amount
-
-	}
-
-	return holdings
 }
 
 func Get_price(tokens map[string]bool) map[string]string {
 
 	var params = ""
 	var endpoint = "/api_v1/tickerall"
-	var data = new(Prices)
+	var data interface{}
 	var prices = make(map[string]string)
 	var body []byte
 
@@ -95,13 +72,18 @@ func Get_price(tokens map[string]bool) map[string]string {
 	err := json.Unmarshal(body, &data)
 	check(err)
 
-	//parse data and format for return
-	for _, v := range data.Prices {
+	all := data.(map[string]interface{})
+	allPrices := all["data"].(map[string]interface{})
 
-		// kucoin formats pairs as "LINK-ETH"
-		// this will be the format we convert others to
-		symbol := v.Symbol
-		price := string(v.Price)
+	//parse data and format for return
+	for k, v := range allPrices {
+
+		// bitz formats pairs as "LINK_ETH"
+		// they also use token as key itself, which is the reason
+		// for parsing this data into a generic interface and not a struct
+		details := v.(map[string]interface{})
+		symbol := strings.ToUpper(k)
+		price := details["last"].(string)
 		is_eth_pair := strings.HasSuffix(symbol, "_ETH")
 		token := strings.TrimSuffix(symbol, "_ETH")
 
@@ -117,8 +99,8 @@ func Sell(token string, quantity int, price float64) (transaction_id string, sel
 
 	token += "_ETH"
 	var timestamp = strconv.Itoa(int(time.Now().Unix() * 1000))
-	var params = fmt.Sprintf("api_key=%s&coin=%s&nonce=235195&number=%d&price=%f&timestamp=%d&tradepwd=%s&type=out&sign=%s", 
-		api_key, token, quantity, price, timestamp, spi_tradepwd)
+	var params = fmt.Sprintf("api_key=%s&coin=%s&nonce=235195&number=%d&price=%f&timestamp=%d&tradepwd=%s&type=out&sign=%s",
+		api_key, token, quantity, price, timestamp, api_tradepw)
 	var signature = make_signature(params)
 	var endpoint = "/api_v1/tradeAdd"
 	var order = new(Order)
@@ -140,11 +122,11 @@ func Sell(token string, quantity int, price float64) (transaction_id string, sel
 
 }
 
-func make_signature(params string) signature string {
+func make_signature(params string) string {
 
 	hasher := md5.New()
-    hasher.Write([]byte(params))
-    return hex.EncodeToString(hasher.Sum(nil))
+	hasher.Write([]byte(params))
+	return hex.EncodeToString(hasher.Sum(nil))
 
 }
 
@@ -153,7 +135,6 @@ func execute(method string, url string, endpoint string, params string, auth boo
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
 	check(err)
 
-	req.Header.Set("User-Agent", "test")
 	req.Header.Add("Accept", "application/json")
 
 	client := &http.Client{}
