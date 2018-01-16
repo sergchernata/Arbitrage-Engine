@@ -88,7 +88,7 @@ func Get_price(tokens map[string]bool) map[string]string {
 		token := strings.TrimSuffix(symbol, "_ETH")
 
 		if is_eth_pair && tokens[token] {
-			prices[symbol] = price
+			prices[token+"-ETH"] = price
 		}
 	}
 
