@@ -76,10 +76,10 @@ func Get_balances(tokens map[string]bool) map[string]string {
 
 }
 
-func Get_price(tokens map[string]bool) map[string]string {
+func Get_price(tokens map[string]bool) map[string]float64 {
 
 	var endpoint = "/api/v3/ticker/price"
-	var prices = make(map[string]string)
+	var prices = make(map[string]float64)
 	var data = new(Prices)
 	var body []byte
 
@@ -95,9 +95,10 @@ func Get_price(tokens map[string]bool) map[string]string {
 		// binance formats pairs as "LINKETH"
 		// we're going to instead use kucoin's format "LINK-ETH"
 		symbol := v.Symbol
-		price := v.Price
 		is_eth_pair := strings.HasSuffix(symbol, "ETH")
 		token := strings.TrimSuffix(symbol, "ETH")
+		price, err := strconv.ParseFloat(v.Price, 64)
+		check(err)
 
 		if is_eth_pair && tokens[token] {
 			prices[token+"-ETH"] = price

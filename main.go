@@ -127,12 +127,6 @@ func compare_prices(binance, kucoin, bitz map[string]string, exclude map[string]
 
 		pair := token + "-ETH"
 
-		// not every exchange trades the same tokens
-		// check if the token at hand is present on both
-		// binance_value, binance_ok := binance[pair]
-		// kucoin_value, kucoin_ok := kucoin[pair]
-		// bitz_value, bitz_ok := bitz[pair]
-
 		prices := map[string]string{
 			"binance" : binance[pair],
 			"kucoin" : kucoin[pair],
@@ -163,26 +157,23 @@ func find_min_max_exchanges(prices map[string]string) (float64, float64, string,
 
 	for exchange, price := range prices {
 
-		price64, err := strconv.ParseFloat(price, 64)
-		check(err)
-
 		// starting point
 		if min_price == 0 && max_price == 0 {
-			min_price = price64
-			max_price = price64
+			min_price = price
+			max_price = price
 			min_exchange = exchange
 			max_exchange = exchange
 
 			continue
 		}
 
-		if price64 < min_price {
-			min_price = price64
+		if price < min_price {
+			min_price = price
 			min_exchange = exchange
 		}
 
-		if price64 > max_price {
-			max_price = price64
+		if price > max_price {
+			max_price = price
 			max_exchange = exchange
 		}
 

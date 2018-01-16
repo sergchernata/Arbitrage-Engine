@@ -58,12 +58,12 @@ func Initialize(url string, key string, secret string, tradepw string) {
 
 }
 
-func Get_price(tokens map[string]bool) map[string]string {
+func Get_price(tokens map[string]bool) map[string]float64 {
 
 	var params = ""
 	var endpoint = "/api_v1/tickerall"
 	var data interface{}
-	var prices = make(map[string]string)
+	var prices = make(map[string]float64)
 	var body []byte
 
 	// perform api call
@@ -83,9 +83,10 @@ func Get_price(tokens map[string]bool) map[string]string {
 		// for parsing this data into a generic interface and not a struct
 		details := v.(map[string]interface{})
 		symbol := strings.ToUpper(k)
-		price := details["last"].(string)
 		is_eth_pair := strings.HasSuffix(symbol, "_ETH")
 		token := strings.TrimSuffix(symbol, "_ETH")
+		price, err := strconv.ParseFloat(details["last"].(string), 64)
+		check(err)
 
 		if is_eth_pair && tokens[token] {
 			prices[token+"-ETH"] = price

@@ -83,12 +83,12 @@ func Get_balances(tokens map[string]bool) map[string]string {
 	return holdings
 }
 
-func Get_price(tokens map[string]bool) map[string]string {
+func Get_price(tokens map[string]bool) map[string]float64 {
 
 	var params = ""
 	var endpoint = "/v1/open/tick"
 	var data = new(Prices)
-	var prices = make(map[string]string)
+	var prices = make(map[string]float64)
 	var body []byte
 
 	// perform api call
@@ -103,9 +103,10 @@ func Get_price(tokens map[string]bool) map[string]string {
 		// kucoin formats pairs as "LINK-ETH"
 		// this will be the format we convert others to
 		symbol := v.Symbol
-		price := string(v.Price)
 		is_eth_pair := strings.HasSuffix(symbol, "-ETH")
 		token := strings.TrimSuffix(symbol, "-ETH")
+		price, err := strconv.ParseFloat(string(v.Price), 64)
+		check(err)
 
 		if is_eth_pair && tokens[token] {
 			prices[token+"-ETH"] = price
