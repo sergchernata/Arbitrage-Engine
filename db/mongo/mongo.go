@@ -20,6 +20,15 @@ type Price struct {
 	Timestamp time.Time
 }
 
+type Transaction struct {
+	ID            bson.ObjectId `bson:"_id,omitempty"`
+	Token         string
+	Sell_price    float64
+	Sell_exchange string
+	Sell_tx_id    string
+	Timestamp     time.Time
+}
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -43,19 +52,19 @@ func Initialize(host string, database string, username string, password string) 
 
 }
 
-func Create_transaction(token, exchange, transaction_id, string, price float64) {
+func Create_transaction(token, exchange, transaction_id string, price float64) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(mgoDatabase).C("transactions")
 
-	row := Price{
-		Token: token,
-		Sell_price: price,
+	row := Transaction{
+		Token:         token,
+		Sell_price:    price,
 		Sell_exchange: exchange,
-		Sell_tx_id: transaction_id
-		Timestamp: time.Now(),
+		Sell_tx_id:    transaction_id,
+		Timestamp:     time.Now(),
 	}
 
 	if err := collection.Insert(row); err != nil {
@@ -74,9 +83,9 @@ func Save_prices(tokens map[string]string, exchange string) {
 	for token, price := range tokens {
 
 		row := Price{
-			Token: token,
-			Price: price,
-			Exchange: exchange,
+			Token:     token,
+			Price:     price,
+			Exchange:  exchange,
 			Timestamp: time.Now(),
 		}
 

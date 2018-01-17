@@ -67,11 +67,6 @@ func init() {
 					}
 				}
 
-			} else if split[0] == "PERCENT_THRESHOLD" {
-
-				props[split[0]], err = strconv.ParseFloat(split[1], 64)
-				check(err)
-
 			} else {
 
 				props[split[0]] = split[1]
@@ -97,7 +92,7 @@ func main() {
 	// kucoin_prices := kucoin.Get_price(tokens)
 	// bitz_prices := bitz.Get_price(tokens)
 	// bitz.Sell("NULS", trade_quantity["NULS"], 0.006)
-	
+
 	// binance_balances := binance.Get_balances(tokens)
 	// kucoin_balances := kucoin.Get_balances(tokens)
 	// fmt.Println(binance_balances, kucoin_balances)
@@ -121,26 +116,30 @@ func check_balances(binance map[string]string) map[string]bool {
 
 }
 
-func compare_prices(binance, kucoin, bitz map[string]string, exclude map[string]bool) {
+func compare_prices(binance, kucoin, bitz map[string]float64, exclude map[string]bool) {
 
 	for token := range tokens {
 
 		pair := token + "-ETH"
 
-		prices := map[string]string{
-			"binance" : binance[pair],
-			"kucoin" : kucoin[pair],
-			"bitz" : bitz[pair],
+		prices := map[string]float64{
+			"binance": binance[pair],
+			"kucoin":  kucoin[pair],
+			"bitz":    bitz[pair],
 		}
 
 		min_price, max_price, min_exchange, max_exchange := find_min_max_exchanges(prices)
+		fmt.Println(min_price, max_price, min_exchange, max_exchange)
 
 		// calculte percentage difference
 		difference := (1 - max_price/min_price) * 100
 
 		// check if difference is over the thershold
 		// if so, trigger the sell
-		if difference >= props["PERCENT_THRESHOLD"] {
+		percent_threshold, err := strconv.ParseFloat(props["PERCENT_THRESHOLD"], 64)
+		check(err)
+
+		if difference >= percent_threshold {
 
 			sell(token, max_exchange, max_price)
 
@@ -150,10 +149,12 @@ func compare_prices(binance, kucoin, bitz map[string]string, exclude map[string]
 
 }
 
-func find_min_max_exchanges(prices map[string]string) (float64, float64, string, string) {
+func find_min_max_exchanges(prices map[string]float64) (float64, float64, string, string) {
 
-	min_price, max_price := 0
-	min_exchange, max_exchange := ""
+	min_price := 0.0
+	max_price := 0.0
+	min_exchange := ""
+	max_exchange := ""
 
 	for exchange, price := range prices {
 
@@ -191,14 +192,14 @@ func sell(token, exchange string, price float64) {
 
 	switch exchange {
 
-		case "binance":
-			transaction_id, sell_placed = binance.Sell(token, trade_quantity[token], price)
-		case "kucoin":
-			transaction_id, sell_placed = kucoin.Sell(token, trade_quantity[token], price)
-		case "bitz":
-			transaction_id, sell_placed = bitz.Sell(token, trade_quantity[token], price
-		default:
-			panic("Exchange selection not provided or doesn't match available choices.")
+	case "binance":
+		transaction_id, sell_placed = binance.Sell(token, trade_quantity[token], price)
+	case "kucoin":
+		transaction_id, sell_placed = kucoin.Sell(token, trade_quantity[token], price)
+	case "bitz":
+		transaction_id, sell_placed = bitz.Sell(token, trade_quantity[token], price)
+	default:
+		panic("Exchange selection not provided or doesn't match available choices.")
 
 	}
 
