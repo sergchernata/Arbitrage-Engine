@@ -12,6 +12,17 @@ import (
 var mgoSession *mgo.Session
 var mgoDatabase string
 
+type Status int
+
+const(
+	SellPlaced Status = iota
+	SellCompleted
+	TransferStarted
+	TransferCompleted
+	BuyPlaced
+	BuyCompleted
+)
+
 type Price struct {
 	ID        bson.ObjectId `bson:"_id,omitempty"`
 	Token     string
@@ -22,10 +33,18 @@ type Price struct {
 
 type Transaction struct {
 	ID            bson.ObjectId `bson:"_id,omitempty"`
+	Status        int
 	Token         string
 	Sell_price    float64
+	Sell_cost     float64
+	Sell_quantity float64
 	Sell_exchange string
 	Sell_tx_id    string
+	Buy_price     float64
+	Buy_cost      float64
+	Buy_quantity  float64
+	Buy_exchange  string
+	Buy_tx_id     string
 	Timestamp     time.Time
 }
 
@@ -60,6 +79,7 @@ func Create_transaction(token, exchange, transaction_id string, price float64) {
 	collection := session.DB(mgoDatabase).C("transactions")
 
 	row := Transaction{
+		Status:        SellPlaced
 		Token:         token,
 		Sell_price:    price,
 		Sell_exchange: exchange,
