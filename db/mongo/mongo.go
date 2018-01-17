@@ -93,6 +93,23 @@ func Create_transaction(token, exchange, transaction_id string, price float64) {
 
 }
 
+func Get_incomplete_transactions() []Transaction {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	var transactions []Transaction
+
+	query := bson.M{"_id": bson.M{"$lt": BuyCompleted + 1}}
+	err := collection.Find(query).All(&transactions)
+	check(err)
+
+	return transactions
+
+}
+
 func Save_prices(tokens map[string]string, exchange string) {
 
 	session := mgoSession.Clone()
