@@ -11,6 +11,7 @@ import (
 	"./exchanges/binance"
 	"./exchanges/bitz"
 	"./exchanges/kucoin"
+	"./exchanges/okex"
 
 	// database package
 	"./db/mongo"
@@ -82,37 +83,42 @@ func init() {
 	binance.Initialize(props["BINANCE_URL"], props["BINANCE_KEY"], props["BINANCE_SECRET"])
 	kucoin.Initialize(props["KUCOIN_URL"], props["KUCOIN_KEY"], props["KUCOIN_SECRET"])
 	bitz.Initialize(props["BITZ_URL"], props["BITZ_KEY"], props["BITZ_SECRET"], props["BITZ_TRADEPW"])
+	okex.Initialize(props["OKEX_URL"], props["OKEX_KEY"], props["OKEX_SECRET"], props["OKEX_TRADEPW"])
 
 }
 
 func main() {
 
-	// pull prices from all exchanges
-	// binance_prices := binance.Get_price(tokens)
-	// kucoin_prices := kucoin.Get_price(tokens)
-	// bitz_prices := bitz.Get_price(tokens)
-	// bitz.Sell("NULS", trade_quantity["NULS"], 0.006)
+	//-----------------------------------//
+	// get prices from all exchanges
+	//-----------------------------------//
+	binance_prices := binance.Get_price(tokens)
+	kucoin_prices := kucoin.Get_price(tokens)
+	bitz_prices := bitz.Get_price(tokens)
+	okex_prices := okex.Get_price(tokens)
 
-	// binance_balances := binance.Get_balances(tokens)
-	// kucoin_balances := kucoin.Get_balances(tokens)
-	// fmt.Println(binance_balances, kucoin_balances)
+	//-----------------------------------//
+	// get balances from all exchanges
+	//-----------------------------------//
+	binance_balances := binance.Get_balances(tokens)
+	kucoin_balances := kucoin.Get_balances(tokens)
 
-	// exclude tokens that are already being transacted or transfered
-	// exclude := check_balances(binance_balances)
+	//-----------------------------------//
+	// get incomplete transactions
+	//-----------------------------------//
+	mongo.Get_incomplete_transactions()
 
+	//-----------------------------------//
+	// start new transactions
+	//-----------------------------------//
 	// compare_prices(binance_prices, kucoin_prices, bitz_prices, exclude)
 
+	//-----------------------------------//
+	// save prices from all exchanges
+	//-----------------------------------//
 	// mongo.Save_prices(binance_prices)
 	// mongo.Save_prices(kucoin_prices)
 	// mongo.Save_prices(bitz_prices)
-
-}
-
-func check_balances(binance map[string]string) map[string]bool {
-
-	var exclude = make(map[string]bool)
-
-	return exclude
 
 }
 
