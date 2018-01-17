@@ -138,6 +138,27 @@ func Sell(token string, quantity int, price float64) (transaction_id string, sel
 
 }
 
+func Withdraw(token, amount, address string) (transaction_id string, sell_placed bool) {
+
+	var params = fmt.Sprintf("address=%s&amount=%s", address, amount)
+	var endpoint = "/v1/account/" + token + "/withdraw/apply"
+	var order = new(Order)
+	var body []byte
+
+	// perform api call
+	body = execute("POST", api_url, endpoint, params, true)
+
+	err := json.Unmarshal(body, &order)
+	check(err)
+
+	if order.Data.Id == "" {
+		return "", false
+	}
+
+	return order.Data.Id, true
+
+}
+
 func execute(method string, url string, endpoint string, params string, auth bool) []byte {
 
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
