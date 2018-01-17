@@ -122,6 +122,9 @@ func main() {
 
 }
 
+// loops over all tokens
+// uses find_min_max_exchanges() on each token
+// if there is sufficient price gap, begins a transaction with sell()
 func compare_prices(binance, kucoin, bitz map[string]float64, exclude map[string]bool) {
 
 	for token := range tokens {
@@ -155,6 +158,9 @@ func compare_prices(binance, kucoin, bitz map[string]float64, exclude map[string
 
 }
 
+// accepts a list of prices for 1 token
+// fints the minimum and maximum price
+// as well as which exchange they're on
 func find_min_max_exchanges(prices map[string]float64) (float64, float64, string, string) {
 
 	min_price := 0.0
@@ -214,6 +220,8 @@ func sell(token, exchange string, price float64) {
 	}
 
 }
+
+// TODO:
 
 // check transaction progress
 // if sale is complete, transfer ETH to exchange with lowest price
