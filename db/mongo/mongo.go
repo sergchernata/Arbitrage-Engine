@@ -15,12 +15,12 @@ var mgoDatabase string
 type Status int
 
 const(
-	SellPlaced Status = iota
-	SellCompleted
-	TransferStarted
-	TransferCompleted
-	BuyPlaced
-	BuyCompleted
+	SellPlaced Status = iota	// 0
+	SellCompleted				// 1
+	TransferStarted				// 2
+	TransferCompleted			// 3
+	BuyPlaced					// 4
+	BuyCompleted				// 5
 )
 
 type Price struct {
