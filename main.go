@@ -134,7 +134,7 @@ func resume_transactions(transactions []Transaction) {
 		switch t.Status {
 
 			case SellPlaced:
-				check_if_sold(t.Token, t.Sell_exchange)
+				check_if_sold(t.Token, t.Sell_exchange, t.Sell_tx_id)
 
 			case SellCompleted:
 				start_transfer(t.Token, t.Sell_exchange)
@@ -146,7 +146,7 @@ func resume_transactions(transactions []Transaction) {
 				place_buy_order(t.Token, t.Buy_exchange)
 
 			case BuyPlaced:
-				check_if_bought(t.Token, t.Buy_exchange)
+				check_if_bought(t.Token, t.Buy_exchange, t.Buy_tx_id)
 
 			default:
 				panic("Invalid transaction status.")
@@ -157,7 +157,7 @@ func resume_transactions(transactions []Transaction) {
 
 }
 
-func check_if_sold(token, sell_exchange string) bool {
+func check_if_sold(token, sell_exchange, sell_tx_id string) bool {
 	
 	result := false
 	
@@ -259,7 +259,7 @@ func place_buy_order(token, buy_exchange string) bool {
 
 }
 
-func check_if_bought(token, buy_exchange string) bool {
+func check_if_bought(token, buy_exchange, buy_tx_id string) bool {
 	
 	result := false
 	
