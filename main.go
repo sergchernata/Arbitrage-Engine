@@ -160,6 +160,25 @@ func resume_transactions(transactions []Transaction) {
 func check_if_sold(token, sell_exchange string) bool {
 	
 	result := false
+	
+	switch sell_exchange {
+
+		case "binance":
+			return binance.Check_if_sold(token, trade_quantity[token], price)
+
+		case "kucoin":
+			return kucoin.Check_if_sold(token, trade_quantity[token], price)
+
+		case "bitz":
+			return bitz.Check_if_sold(token, trade_quantity[token], price)
+
+		case "okex":
+			return okex.Check_if_sold(token, trade_quantity[token], price)
+
+		default:
+			panic("Exchange selection not provided or doesn't match available choices.")
+
+	}
 
 	return result
 
@@ -168,32 +187,100 @@ func check_if_sold(token, sell_exchange string) bool {
 func start_transfer(token, sell_exchange string) bool {
 	
 	result := false
+	
+	switch sell_exchange {
 
-	return result
+		case "binance":
+			return binance.Start_transfer(token, trade_quantity[token], price)
+
+		case "kucoin":
+			return kucoin.Start_transfer(token, trade_quantity[token], price)
+
+		case "bitz":
+			return bitz.Start_transfer(token, trade_quantity[token], price)
+
+		case "okex":
+			return okex.Start_transfer(token, trade_quantity[token], price)
+
+		default:
+			panic("Exchange selection not provided or doesn't match available choices.")
+
+	}
 
 }
 
 func check_if_transferred(token, buy_exchange string) bool {
 	
 	result := false
+	
+	switch buy_exchange {
 
-	return result
+		case "binance":
+			return binance.Check_if_transferred(token, trade_quantity[token], price)
+
+		case "kucoin":
+			return kucoin.Check_if_transferred(token, trade_quantity[token], price)
+
+		case "bitz":
+			return bitz.Check_if_transferred(token, trade_quantity[token], price)
+
+		case "okex":
+			return okex.Check_if_transferred(token, trade_quantity[token], price)
+
+		default:
+			panic("Exchange selection not provided or doesn't match available choices.")
+
+	}
 
 }
 
 func place_buy_order(token, buy_exchange string) bool {
 	
 	result := false
+	
+	switch buy_exchange {
 
-	return result
+		case "binance":
+			return binance.Place_buy_order(token, trade_quantity[token], price)
+
+		case "kucoin":
+			return kucoin.Place_buy_order(token, trade_quantity[token], price)
+
+		case "bitz":
+			return bitz.Place_buy_order(token, trade_quantity[token], price)
+
+		case "okex":
+			return okex.Place_buy_order(token, trade_quantity[token], price)
+
+		default:
+			panic("Exchange selection not provided or doesn't match available choices.")
+
+	}
 
 }
 
 func check_if_bought(token, buy_exchange string) bool {
 	
 	result := false
+	
+	switch buy_exchange {
 
-	return result
+		case "binance":
+			return binance.Check_if_bought(token, trade_quantity[token], price)
+
+		case "kucoin":
+			return kucoin.Check_if_bought(token, trade_quantity[token], price)
+
+		case "bitz":
+			return bitz.Check_if_bought(token, trade_quantity[token], price)
+
+		case "okex":
+			return okex.Check_if_bought(token, trade_quantity[token], price)
+
+		default:
+			panic("Exchange selection not provided or doesn't match available choices.")
+
+	}
 
 }
 
@@ -281,16 +368,16 @@ func place_sell_order(token, exchange string, price float64) {
 	switch exchange {
 
 		case "binance":
-			transaction_id, sell_placed = binance.Sell(token, trade_quantity[token], price)
+			transaction_id, sell_placed = binance.Place_sell_order(token, trade_quantity[token], price)
 
 		case "kucoin":
-			transaction_id, sell_placed = kucoin.Sell(token, trade_quantity[token], price)
+			transaction_id, sell_placed = kucoin.Place_sell_order(token, trade_quantity[token], price)
 
 		case "bitz":
-			transaction_id, sell_placed = bitz.Sell(token, trade_quantity[token], price)
+			transaction_id, sell_placed = bitz.Place_sell_order(token, trade_quantity[token], price)
 
 		case "okex":
-			transaction_id, sell_placed = okex.Sell(token, trade_quantity[token], price)
+			transaction_id, sell_placed = okex.Place_sell_order(token, trade_quantity[token], price)
 
 		default:
 			panic("Exchange selection not provided or doesn't match available choices.")

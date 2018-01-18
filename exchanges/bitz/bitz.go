@@ -96,7 +96,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	return prices
 }
 
-func Sell(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
+func Place_sell_order(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
 	token += "_ETH"
 	var timestamp = strconv.Itoa(int(time.Now().Unix() * 1000))

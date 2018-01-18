@@ -117,7 +117,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	return prices
 }
 
-func Sell(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
+func Place_sell_order(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
 	token += "-ETH"
 	var params = fmt.Sprintf("amount=%d&price=%f&symbol=%s&type=%s", quantity, price, token, "SELL")
