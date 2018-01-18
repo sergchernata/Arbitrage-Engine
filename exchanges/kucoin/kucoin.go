@@ -138,6 +138,41 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 
 }
 
+func Check_if_sold(token, sell_exchange string) bool {
+
+	return true
+
+}
+
+
+func Start_transfer(token, sell_exchange string) bool {
+
+	return true
+
+}
+
+
+func Check_if_transferred(token, buy_exchange string) bool {
+
+	return true
+
+}
+
+
+func Place_buy_order(token, buy_exchange string) bool {
+
+	return true
+
+}
+
+
+func Check_if_bought(token, buy_exchange string) bool {
+	
+	return true
+
+}
+
+
 func Withdraw(token, amount, address string) (transaction_id string, sell_placed bool) {
 
 	var params = fmt.Sprintf("address=%s&amount=%s", address, amount)
