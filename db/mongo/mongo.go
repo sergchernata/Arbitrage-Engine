@@ -94,7 +94,7 @@ func Get_incomplete_transactions() []Transaction {
 
 	var transactions []Transaction
 
-	query := bson.M{"_id": bson.M{"$lt": BuyCompleted + 1}}
+	query := bson.M{"_id": bson.M{"$lt": BuyCompleted}}
 	err := collection.Find(query).All(&transactions)
 	check(err)
 

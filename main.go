@@ -125,30 +125,75 @@ func main() {
 
 }
 
+// finds transactions that are in progress
+// checks on their current status and moves things along
 func resume_transactions(transactions []Transaction) {
 
 	for t := range transactions {
 
-		status := t.Status
+		switch t.Status {
 
-		switch status {
+			case SellPlaced:
+				check_if_sold(t.Token, t.Sell_exchange)
 
-		case SellPlaced:
-			
-		case SellCompleted:
-			
-		case TransferStarted:
+			case SellCompleted:
+				start_transfer(t.Token, t.Sell_exchange)
 
-		case TransferCompleted:
-			
-		case BuyPlaced:
-						
-		default: // BuyCompleted
-			
+			case TransferStarted:
+				check_if_transferred(t.Token, t.Buy_exchange)
+
+			case TransferCompleted:
+				place_buy_order(t.Token, t.Buy_exchange)
+
+			case BuyPlaced:
+				check_if_bought(t.Token, t.Buy_exchange)
+
+			default:
+				panic("Invalid transaction status.")
 
 		}
 
 	}
+
+}
+
+func check_if_sold(token, sell_exchange string) bool {
+	
+	result := false
+
+	return result
+
+}
+
+func start_transfer(token, sell_exchange string) bool {
+	
+	result := false
+
+	return result
+
+}
+
+func check_if_transferred(token, buy_exchange string) bool {
+	
+	result := false
+
+	return result
+
+}
+
+func place_buy_order(token, buy_exchange string) bool {
+	
+	result := false
+
+	return result
+
+}
+
+func check_if_bought(token, buy_exchange string) bool {
+	
+	result := false
+
+	return result
 
 }
 
@@ -181,7 +226,7 @@ func compare_prices(binance, kucoin, bitz map[string]float64, exclude map[string
 
 		if difference >= percent_threshold {
 
-			sell(token, max_exchange, max_price)
+			place_sell_order(token, max_exchange, max_price)
 
 		}
 
@@ -228,21 +273,27 @@ func find_min_max_exchanges(prices map[string]float64) (float64, float64, string
 }
 
 // start transaction, selling high
-func sell(token, exchange string, price float64) {
+func place_sell_order(token, exchange string, price float64) {
 
 	sell_placed := false
 	transaction_id := ""
 
 	switch exchange {
 
-	case "binance":
-		transaction_id, sell_placed = binance.Sell(token, trade_quantity[token], price)
-	case "kucoin":
-		transaction_id, sell_placed = kucoin.Sell(token, trade_quantity[token], price)
-	case "bitz":
-		transaction_id, sell_placed = bitz.Sell(token, trade_quantity[token], price)
-	default:
-		panic("Exchange selection not provided or doesn't match available choices.")
+		case "binance":
+			transaction_id, sell_placed = binance.Sell(token, trade_quantity[token], price)
+
+		case "kucoin":
+			transaction_id, sell_placed = kucoin.Sell(token, trade_quantity[token], price)
+
+		case "bitz":
+			transaction_id, sell_placed = bitz.Sell(token, trade_quantity[token], price)
+
+		case "okex":
+			transaction_id, sell_placed = okex.Sell(token, trade_quantity[token], price)
+
+		default:
+			panic("Exchange selection not provided or doesn't match available choices.")
 
 	}
 
