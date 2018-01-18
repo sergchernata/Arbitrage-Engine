@@ -15,6 +15,9 @@ import (
 
 	// database package
 	"./db/mongo"
+
+	// utility
+	"./utils"
 )
 
 // holds environment variables
@@ -106,7 +109,7 @@ func main() {
 	//-----------------------------------//
 	// get incomplete transactions
 	//-----------------------------------//
-	mongo.Get_incomplete_transactions()
+	resume_transactions(mongo.Get_incomplete_transactions())
 
 	//-----------------------------------//
 	// start new transactions
@@ -119,6 +122,33 @@ func main() {
 	// mongo.Save_prices(binance_prices)
 	// mongo.Save_prices(kucoin_prices)
 	// mongo.Save_prices(bitz_prices)
+
+}
+
+func resume_transactions(transactions []Transaction) {
+
+	for t := range transactions {
+
+		status := t.Status
+
+		switch status {
+
+		case SellPlaced:
+			
+		case SellCompleted:
+			
+		case TransferStarted:
+
+		case TransferCompleted:
+			
+		case BuyPlaced:
+						
+		default: // BuyCompleted
+			
+
+		}
+
+	}
 
 }
 
@@ -230,12 +260,3 @@ func sell(token, exchange string, price float64) {
 // finalize transaction, restore balances on all exchanges
 
 // occasionally, send our profit coins to trezor address
-
-func round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
-}
-
-func toFixed(num float64, precision int) float64 {
-	output := math.Pow(10, float64(precision))
-	return float64(round(num*output)) / output
-}
