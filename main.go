@@ -32,6 +32,15 @@ var tokens = make(map[string]bool)
 // each value is the number of tokens to be sold at once per trade
 var trade_quantity = make(map[string]int)
 
+var comparisons = make(map[string]Comparison)
+
+type Comparison struct {
+	Min_price    float64
+	Max_price    float64
+	Min_exchange string
+	Max_exchange string
+}
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -114,14 +123,15 @@ func main() {
 	exclude := exclude_tokens(binance_balances, kucoin_balances, bitz_balances, okex_balances, tokens)
 
 	//-----------------------------------//
-	// get incomplete transactions
-	//-----------------------------------//
-	resume_transactions(mongo.Get_incomplete_transactions())
-
-	//-----------------------------------//
 	// start new transactions
 	//-----------------------------------//
 	compare_prices(binance_prices, kucoin_prices, bitz_prices, okex_prices, exclude)
+	fmt.Println(okex.Check_if_sold("NULS", "eciwn8h4f"))
+
+	//-----------------------------------//
+	// get incomplete transactions
+	//-----------------------------------//
+	resume_transactions(mongo.Get_incomplete_transactions())
 
 	//-----------------------------------//
 	// save prices from all exchanges
@@ -152,7 +162,9 @@ func resume_transactions(transactions []utils.Transaction) {
 			check_if_sold(t.Token, t.Sell_exchange, t.Sell_tx_id)
 
 		case utils.SellCompleted:
-			start_transfer(t.Token, t.Sell_exchange, t.Buy_exchange)
+			exchange := strings.ToUpper(comparisons[t.Token].Min_exchange)
+			destination := props[exchange+"_ETH_ADDRESS"]
+			start_transfer(t.Token, t.Sell_exchange, destination, t.Sell_cost)
 
 		case utils.TransferStarted:
 			check_if_transferred(t.Sell_cost, t.Buy_exchange)
@@ -172,116 +184,148 @@ func resume_transactions(transactions []utils.Transaction) {
 
 }
 
-func check_if_sold(token, sell_exchange, sell_tx_id string) bool {
+func check_if_sold(token, sell_exchange, sell_tx_id string) {
+
+	sold := false
 
 	switch sell_exchange {
 
 	case "binance":
-		return binance.Check_if_sold(token, sell_tx_id)
+		sold = binance.Check_if_sold(token, sell_tx_id)
 
 	case "kucoin":
-		return kucoin.Check_if_sold(token, sell_tx_id)
+		sold = kucoin.Check_if_sold(token, sell_tx_id)
 
 	case "bitz":
-		return bitz.Check_if_sold(token, sell_tx_id)
+		sold = bitz.Check_if_sold(token, sell_tx_id)
 
 	case "okex":
-		return okex.Check_if_sold(token, sell_tx_id)
+		sold = okex.Check_if_sold(token, sell_tx_id)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
 
 	}
 
+	if sold {
+
+	}
+
 }
 
-func start_transfer(token, sell_exchange, buy_exchange string) bool {
+func start_transfer(token, sell_exchange, destination string, amount float64) {
+
+	tx_id := ""
+	started := false
 
 	switch sell_exchange {
 
 	case "binance":
-		return binance.Start_transfer(token, buy_exchange)
+		tx_id, started = binance.Start_transfer(token, destination, amount)
 
 	case "kucoin":
-		return kucoin.Start_transfer(token, buy_exchange)
+		tx_id, started = kucoin.Start_transfer(token, destination, amount)
 
 	case "bitz":
-		return bitz.Start_transfer(token, buy_exchange)
+		tx_id, started = bitz.Start_transfer(token, destination, amount)
 
 	case "okex":
-		return okex.Start_transfer(token, buy_exchange)
+		tx_id, started = okex.Start_transfer(token, destination, amount)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
 
 	}
 
+	if started {
+		fmt.Println(tx_id)
+	}
+
 }
 
-func check_if_transferred(sell_cost float64, buy_exchange string) bool {
+func check_if_transferred(sell_cost float64, buy_exchange string) {
+
+	transferred := false
 
 	switch buy_exchange {
 
 	case "binance":
-		return binance.Check_if_transferred(sell_cost)
+		transferred = binance.Check_if_transferred(sell_cost)
 
 	case "kucoin":
-		return kucoin.Check_if_transferred(sell_cost)
+		transferred = kucoin.Check_if_transferred(sell_cost)
 
 	case "bitz":
-		return bitz.Check_if_transferred(sell_cost)
+		transferred = bitz.Check_if_transferred(sell_cost)
 
 	case "okex":
-		return okex.Check_if_transferred(sell_cost)
+		transferred = okex.Check_if_transferred(sell_cost)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
 
 	}
 
+	if transferred {
+
+	}
+
 }
 
-func place_buy_order(token, buy_exchange string, buy_cost float64) bool {
+func place_buy_order(token, buy_exchange string, buy_cost float64) {
+
+	tx_id := ""
+	placed := false
 
 	switch buy_exchange {
 
 	case "binance":
-		return binance.Place_buy_order(token, buy_cost)
+		tx_id, placed = binance.Place_buy_order(token, buy_cost)
 
 	case "kucoin":
-		return kucoin.Place_buy_order(token, buy_cost)
+		tx_id, placed = kucoin.Place_buy_order(token, buy_cost)
 
 	case "bitz":
-		return bitz.Place_buy_order(token, buy_cost)
+		tx_id, placed = bitz.Place_buy_order(token, buy_cost)
 
 	case "okex":
-		return okex.Place_buy_order(token, buy_cost)
+		tx_id, placed = okex.Place_buy_order(token, buy_cost)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
 
 	}
 
+	if placed {
+		fmt.Println(tx_id)
+	}
+
 }
 
-func check_if_bought(token, buy_exchange, buy_tx_id string) bool {
+func check_if_bought(token, buy_exchange, buy_tx_id string) {
+
+	bought := false
 
 	switch buy_exchange {
 
 	case "binance":
-		return binance.Check_if_bought(token, buy_tx_id)
+		bought = binance.Check_if_bought(token, buy_tx_id)
 
 	case "kucoin":
-		return kucoin.Check_if_bought(token, buy_tx_id)
+		bought = kucoin.Check_if_bought(token, buy_tx_id)
 
 	case "bitz":
-		return bitz.Check_if_bought(token, buy_tx_id)
+		bought = bitz.Check_if_bought(token, buy_tx_id)
 
 	case "okex":
-		return okex.Check_if_bought(token, buy_tx_id)
+		bought = okex.Check_if_bought(token, buy_tx_id)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
+
+	}
+
+	if bought {
 
 	}
 
@@ -303,11 +347,11 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 			"okex": okex[pair],
 		}
 
-		min_price, max_price, min_exchange, max_exchange := find_min_max_exchanges(prices)
-		fmt.Println(min_price, max_price, min_exchange, max_exchange)
+		comparison := find_min_max_exchanges(prices)
+		comparisons[token] = comparison
 
 		// calculte percentage difference
-		difference := (1 - max_price/min_price) * 100
+		difference := (1 - comparison.Max_price/comparison.Min_price) * 100
 
 		// check if difference is over the thershold
 		// if so, trigger the sell
@@ -327,38 +371,35 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 // accepts a list of prices for 1 token
 // fints the minimum and maximum price
 // as well as which exchange they're on
-func find_min_max_exchanges(prices map[string]float64) (float64, float64, string, string) {
+func find_min_max_exchanges(prices map[string]float64) Comparison {
 
-	min_price := 0.0
-	max_price := 0.0
-	min_exchange := ""
-	max_exchange := ""
+	c := Comparison{}
 
 	for exchange, price := range prices {
 
 		// starting point
-		if min_price == 0 && max_price == 0 {
-			min_price = price
-			max_price = price
-			min_exchange = exchange
-			max_exchange = exchange
+		if c.Min_price == 0 && c.Max_price == 0 {
+			c.Min_price = price
+			c.Max_price = price
+			c.Min_exchange = exchange
+			c.Max_exchange = exchange
 
 			continue
 		}
 
-		if price < min_price {
-			min_price = price
-			min_exchange = exchange
+		if price < c.Min_price {
+			c.Min_price = price
+			c.Min_exchange = exchange
 		}
 
-		if price > max_price {
-			max_price = price
-			max_exchange = exchange
+		if price > c.Max_price {
+			c.Max_price = price
+			c.Max_exchange = exchange
 		}
 
 	}
 
-	return min_price, max_price, min_exchange, max_exchange
+	return c
 
 }
 

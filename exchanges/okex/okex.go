@@ -18,6 +18,11 @@ type Place_order struct {
 	Id      string `json:"order_id"`
 }
 
+type Place_transfer struct {
+	Success bool   `json:"result"`
+	Id      string `json:"withdraw_id"`
+}
+
 type Open_orders struct {
 	Success bool `json:"result"`
 	Orders  []struct {
@@ -190,9 +195,28 @@ func Check_if_sold(token, sell_tx_id string) bool {
 
 }
 
-func Start_transfer(token, destination string) bool {
+func Start_transfer(token, destination string, amount float64) (string, bool) {
 
-	return true
+	var endpoint = "/withdraw.do"
+	var params = fmt.Sprintf("api_key=%s&chargefee=0.01&symbol=%s&target=address&trade_pwd=%s&withdraw_address=%s&withdraw_amount=%d",
+		api_key, token+"_ETH", api_tradepw, destination, amount)
+	var signature = make_signature(params + "&secret_key=" + api_secret)
+	var transfer = new(Place_transfer)
+	var body []byte
+
+	params = params + "&sign=" + signature
+
+	// perform api call
+	body = execute("POST", api_url, endpoint, params)
+
+	err := json.Unmarshal(body, &transfer)
+	check(err)
+
+	if transfer.Success == false {
+		return "", false
+	}
+
+	return transfer.Id, true
 
 }
 
@@ -202,9 +226,9 @@ func Check_if_transferred(sell_cost float64) bool {
 
 }
 
-func Place_buy_order(token string, buy_cost float64) bool {
+func Place_buy_order(token string, buy_cost float64) (string, bool) {
 
-	return true
+	return "", true
 
 }
 

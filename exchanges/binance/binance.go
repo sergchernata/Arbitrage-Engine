@@ -137,9 +137,9 @@ func Check_if_sold(token, sell_tx_id string) bool {
 
 }
 
-func Start_transfer(token, destination string) bool {
+func Start_transfer(token, destination string, amount float64) (string, bool) {
 
-	return true
+	return "", true
 
 }
 
@@ -149,9 +149,9 @@ func Check_if_transferred(sell_cost float64) bool {
 
 }
 
-func Place_buy_order(token string, buy_cost float64) bool {
+func Place_buy_order(token string, buy_cost float64) (string, bool) {
 
-	return true
+	return "", true
 
 }
 
