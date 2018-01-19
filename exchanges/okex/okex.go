@@ -13,9 +13,25 @@ import (
 
 var api_url, api_key, api_secret, api_tradepw string
 
-type Order struct {
+type Place_order struct {
 	Success bool   `json:"result"`
 	Id      string `json:"order_id"`
+}
+
+type Open_orders struct {
+	Success bool `json:"result"`
+	Orders  []struct {
+		Amount      string `json:"amount"`
+		Avg_price   string `json:"avg_price"`
+		Create_date string `json:"create_date"`
+		Deal_amount string `json:"deal_amount"`
+		Order_id    string `json:"order_id"`
+		Orders_id   string `json:"orders_id"`
+		Price       string `json:"price"`
+		Status      string `json:"status"`
+		Symbol      string `json:"symbol"`
+		Type        string `json:"type"`
+	} `json:"orders"`
 }
 
 type Holdings struct {
@@ -120,7 +136,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	var endpoint = "/trade.do"
 	var params = fmt.Sprintf("amount=%d&api_key=%s&price=%f&symbol=%s&type=%s", quantity, api_key, price, token+"_ETH", "sell")
 	var signature = make_signature(params + "&secret_key=" + api_secret)
-	var order = new(Order)
+	var order = new(Place_order)
 	var body []byte
 
 	params = params + "&sign=" + signature
@@ -140,6 +156,35 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 }
 
 func Check_if_sold(token, sell_tx_id string) bool {
+
+	var endpoint = "/order_info.do"
+	var params = fmt.Sprintf("api_key=%s&order_id=%s&symbol=%s", api_key, sell_tx_id, token+"_ETH")
+	var signature = make_signature(params + "&secret_key=" + api_secret)
+	var open_orders = new(Open_orders)
+	var body []byte
+
+	params = params + "&sign=" + signature
+
+	// perform api call
+	body = execute("POST", api_url, endpoint, params)
+
+	err := json.Unmarshal(body, &open_orders)
+	check(err)
+
+	// no open orders means that everything has been filled
+	if len(open_orders.Orders) == 0 {
+		return true
+	}
+
+	// if we find an open order with matching tx id
+	// then the order has not been filled
+	// this check is necessary because we may have
+	// multiple ongoing transactions in the future
+	for _, order := range open_orders.Orders {
+		if order.Order_id == sell_tx_id {
+			return false
+		}
+	}
 
 	return true
 
@@ -173,7 +218,7 @@ func Withdraw(token, amount, address string) (transaction_id string, sell_placed
 
 	var params = fmt.Sprintf("address=%s&amount=%s", address, amount)
 	var endpoint = "/v1/account/" + token + "/withdraw/apply"
-	var order = new(Order)
+	var order = new(Place_order)
 	var body []byte
 
 	// perform api call
