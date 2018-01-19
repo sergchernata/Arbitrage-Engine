@@ -1,17 +1,14 @@
 package okex
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	//"strings"
-	"time"
+	"strings"
 )
 
 var api_url, api_key, api_secret, api_tradepw string
@@ -24,26 +21,23 @@ type Order struct {
 }
 
 type Holdings struct {
-	Holding Holding `json:"data"`
-	Success bool    `json:"success"`
-}
-
-type Holding struct {
-	Symbol string  `json:"coinType"`
-	Amount float64 `json:"balanceStr,Number"`
+	Info struct {
+		Funds struct {
+			Free interface{} `json:"free"`
+		} `json:"funds"`
+	} `json:"info"`
+	Success bool `json:"result"`
 }
 
 type Prices struct {
-	Data Price  `json:"ticker"`
+	Data struct {
+		High string `json:"high,Number"`
+		Low  string `json:"low,Number"`
+		Sell string `json:"sell,Number"`
+		Buy  string `json:"buy,Number"`
+		Last string `json:"last,Number"`
+	} `json:"ticker"`
 	Date string `json:"date"`
-}
-
-type Price struct {
-	High string `json:"high,Number"`
-	Low  string `json:"low,Number"`
-	Sell string `json:"sell,Number"`
-	Buy  string `json:"buy,Number"`
-	Last string `json:"last,Number"`
 }
 
 func check(e error) {
@@ -65,24 +59,32 @@ func Initialize(url, key, secret, tradepw string) {
 
 func Get_balances(tokens map[string]bool) map[string]float64 {
 
+	var endpoint = "/userinfo.do"
 	var holdings = make(map[string]float64)
-	// var body []byte
+	var params = fmt.Sprintf("api_key=%s", api_key)
+	var signature = make_signature(params + "&secret_key=" + api_secret)
+	var data = new(Holdings)
+	var body []byte
 
-	// for token, _ := range tokens {
+	params = params + "&sign=" + signature
 
-	// 	var data = new(Holdings)
-	// 	var endpoint = "/v1/account/" + token + "/balance"
-	// 	var params = ""
+	// perform api call
+	body = execute("POST", api_url, endpoint, params)
 
-	// 	// perform api call
-	// 	body = execute("GET", api_url, endpoint, params, true)
+	err := json.Unmarshal(body, &data)
+	check(err)
 
-	// 	err := json.Unmarshal(body, &data)
-	// 	check(err)
+	// remove tokens that we don't care about
+	for token, amount := range data.Info.Funds.Free.(map[string]interface{}) {
 
-	// 	holdings[data.Holding.Symbol] = data.Holding.Amount
+		token = strings.ToUpper(token)
+		amount, err := strconv.ParseFloat(amount.(string), 64)
+		check(err)
 
-	// }
+		if tokens[token] {
+			holdings[token] = amount
+		}
+	}
 
 	return holdings
 }
@@ -100,7 +102,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		var params = fmt.Sprintf("symbol=%s", token+"_ETH")
 
 		// perform api call
-		body = execute("GET", api_url, endpoint, params, false)
+		body = execute("GET", api_url, endpoint, params)
 
 		err := json.Unmarshal(body, &data)
 		check(err)
@@ -124,7 +126,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	var body []byte
 
 	// perform api call
-	body = execute("POST", api_url, endpoint, params, true)
+	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &order)
 	check(err)
@@ -175,7 +177,7 @@ func Withdraw(token, amount, address string) (transaction_id string, sell_placed
 	var body []byte
 
 	// perform api call
-	body = execute("POST", api_url, endpoint, params, true)
+	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &order)
 	check(err)
@@ -188,34 +190,20 @@ func Withdraw(token, amount, address string) (transaction_id string, sell_placed
 
 }
 
-func execute(method string, url string, endpoint string, params string, auth bool) []byte {
+func make_signature(params string) string {
+
+	hasher := md5.New()
+	hasher.Write([]byte(params))
+	return strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
+
+}
+
+func execute(method string, url string, endpoint string, params string) []byte {
 
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
 	check(err)
 
 	req.Header.Add("Accept", "application/json")
-
-	if auth {
-
-		timestamp := strconv.Itoa(int(time.Now().Unix() * 1000))
-
-		//splice string for signing
-		strForSign := endpoint + "/" + timestamp + "/" + params
-
-		//Make a base64 encoding of the completed string
-		signatureStr := base64.StdEncoding.EncodeToString([]byte(strForSign))
-
-		mac := hmac.New(sha256.New, []byte(api_secret))
-		_, err := mac.Write([]byte(signatureStr))
-		check(err)
-
-		signature := hex.EncodeToString(mac.Sum(nil))
-
-		req.Header.Add("KC-API-KEY", api_key)
-		req.Header.Add("KC-API-NONCE", timestamp)
-		req.Header.Add("KC-API-SIGNATURE", signature)
-
-	}
 
 	client := &http.Client{}
 

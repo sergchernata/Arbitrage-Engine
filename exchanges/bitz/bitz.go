@@ -70,7 +70,7 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 	// 	var params = ""
 
 	// 	// perform api call
-	// 	body = execute("GET", api_url, endpoint, params, true)
+	// 	body = execute("GET", api_url, endpoint, params)
 
 	// 	err := json.Unmarshal(body, &data)
 	// 	check(err)
@@ -91,7 +91,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	var body []byte
 
 	// perform api call
-	body = execute("GET", api_url, endpoint, params, false)
+	body = execute("GET", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &data)
 	check(err)
@@ -134,7 +134,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	params = params + "&sign=" + signature
 
 	// perform api call
-	body = execute("POST", api_url, endpoint, params, true)
+	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &order)
 	check(err)
@@ -185,7 +185,7 @@ func make_signature(params string) string {
 
 }
 
-func execute(method string, url string, endpoint string, params string, auth bool) []byte {
+func execute(method string, url string, endpoint string, params string) []byte {
 
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
 	check(err)
