@@ -24,8 +24,8 @@ type Holdings struct {
 }
 
 type Holding struct {
-	Symbol string  `json:"asset"`
-	Amount float64 `json:"free,Number"`
+	Symbol string `json:"asset"`
+	Amount string `json:"free,Number"`
 }
 
 type Prices []struct {
@@ -66,7 +66,8 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 	for _, v := range data.Holdings {
 
 		symbol := v.Symbol
-		amount := v.Amount
+		amount, err := strconv.ParseFloat(v.Amount, 64)
+		check(err)
 
 		if tokens[symbol] {
 			holdings[symbol] = amount

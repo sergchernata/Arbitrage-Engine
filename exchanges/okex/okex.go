@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
+	//"strings"
 	"time"
 )
 
@@ -34,13 +34,16 @@ type Holding struct {
 }
 
 type Prices struct {
-	Prices  []Price `json:"data"`
-	Success bool    `json:"success"`
+	Data Price  `json:"ticker"`
+	Date string `json:"date"`
 }
 
 type Price struct {
-	Symbol string      `json:"symbol"`
-	Price  json.Number `json:"lastDealPrice,Number"`
+	High string `json:"high,Number"`
+	Low  string `json:"low,Number"`
+	Sell string `json:"sell,Number"`
+	Buy  string `json:"buy,Number"`
+	Last string `json:"last,Number"`
 }
 
 func check(e error) {
@@ -63,55 +66,50 @@ func Initialize(url, key, secret, tradepw string) {
 func Get_balances(tokens map[string]bool) map[string]float64 {
 
 	var holdings = make(map[string]float64)
-	var body []byte
+	// var body []byte
 
-	for token, _ := range tokens {
+	// for token, _ := range tokens {
 
-		var data = new(Holdings)
-		var endpoint = "/v1/account/" + token + "/balance"
-		var params = ""
+	// 	var data = new(Holdings)
+	// 	var endpoint = "/v1/account/" + token + "/balance"
+	// 	var params = ""
 
-		// perform api call
-		body = execute("GET", api_url, endpoint, params, true)
+	// 	// perform api call
+	// 	body = execute("GET", api_url, endpoint, params, true)
 
-		err := json.Unmarshal(body, &data)
-		check(err)
+	// 	err := json.Unmarshal(body, &data)
+	// 	check(err)
 
-		holdings[data.Holding.Symbol] = data.Holding.Amount
+	// 	holdings[data.Holding.Symbol] = data.Holding.Amount
 
-	}
+	// }
 
 	return holdings
 }
 
 func Get_price(tokens map[string]bool) map[string]float64 {
 
-	var params = ""
-	var endpoint = "/v1/open/tick"
-	var data = new(Prices)
+	var endpoint = "/ticker.do"
 	var prices = make(map[string]float64)
 	var body []byte
 
-	// perform api call
-	body = execute("GET", api_url, endpoint, params, false)
+	// perform api call per token
+	for token, _ := range tokens {
 
-	err := json.Unmarshal(body, &data)
-	check(err)
+		var data = new(Prices)
+		var params = fmt.Sprintf("symbol=%s", token+"_ETH")
 
-	//parse data and format for return
-	for _, v := range data.Prices {
+		// perform api call
+		body = execute("GET", api_url, endpoint, params, false)
 
-		// kucoin formats pairs as "LINK-ETH"
-		// this will be the format we convert others to
-		symbol := v.Symbol
-		is_eth_pair := strings.HasSuffix(symbol, "-ETH")
-		token := strings.TrimSuffix(symbol, "-ETH")
-		price, err := strconv.ParseFloat(string(v.Price), 64)
+		err := json.Unmarshal(body, &data)
 		check(err)
 
-		if is_eth_pair && tokens[token] {
-			prices[token+"-ETH"] = price
-		}
+		price, err := strconv.ParseFloat(data.Data.Last, 64)
+		check(err)
+
+		prices[token] = price
+
 	}
 
 	return prices
@@ -195,7 +193,6 @@ func execute(method string, url string, endpoint string, params string, auth boo
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
 	check(err)
 
-	req.Header.Set("User-Agent", "test")
 	req.Header.Add("Accept", "application/json")
 
 	if auth {

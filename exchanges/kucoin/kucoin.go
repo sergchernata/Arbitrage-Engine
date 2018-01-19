@@ -29,8 +29,8 @@ type Holdings struct {
 }
 
 type Holding struct {
-	Symbol string  `json:"coinType"`
-	Amount float64 `json:"balanceStr,Number"`
+	Symbol string `json:"coinType"`
+	Amount string `json:"balanceStr,Number"`
 }
 
 type Prices struct {
@@ -76,7 +76,10 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 		err := json.Unmarshal(body, &data)
 		check(err)
 
-		holdings[data.Holding.Symbol] = data.Holding.Amount
+		amount, err := strconv.ParseFloat(data.Holding.Amount, 64)
+		check(err)
+
+		holdings[data.Holding.Symbol] = amount
 
 	}
 
