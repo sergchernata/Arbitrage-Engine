@@ -14,10 +14,8 @@ import (
 var api_url, api_key, api_secret, api_tradepw string
 
 type Order struct {
-	Success bool `json:"success"`
-	Data    struct {
-		Id string `json:"orderOid"`
-	} `json:"data"`
+	Success bool   `json:"result"`
+	Id      string `json:"order_id"`
 }
 
 type Holdings struct {
@@ -119,11 +117,13 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 
 func Place_sell_order(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
-	token += "-ETH"
-	var params = fmt.Sprintf("amount=%d&price=%f&symbol=%s&type=%s", quantity, price, token, "SELL")
-	var endpoint = "/v1/order"
+	var endpoint = "/trade.do"
+	var params = fmt.Sprintf("amount=%d&api_key=%s&price=%f&symbol=%s&type=%s", quantity, api_key, price, token+"_ETH", "sell")
+	var signature = make_signature(params + "&secret_key=" + api_secret)
 	var order = new(Order)
 	var body []byte
+
+	params = params + "&sign=" + signature
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
@@ -131,11 +131,11 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	err := json.Unmarshal(body, &order)
 	check(err)
 
-	if order.Data.Id == "" {
+	if order.Success == false {
 		return "", false
 	}
 
-	return order.Data.Id, true
+	return order.Id, true
 
 }
 
@@ -182,11 +182,11 @@ func Withdraw(token, amount, address string) (transaction_id string, sell_placed
 	err := json.Unmarshal(body, &order)
 	check(err)
 
-	if order.Data.Id == "" {
+	if order.Id == "" {
 		return "", false
 	}
 
-	return order.Data.Id, true
+	return order.Id, true
 
 }
 
