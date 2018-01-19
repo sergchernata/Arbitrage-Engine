@@ -32,6 +32,8 @@ var tokens = make(map[string]bool)
 // each value is the number of tokens to be sold at once per trade
 var trade_quantity = make(map[string]int)
 
+// comparisons are stored per token
+// Ex: ["NULS"] = {"Min_price" : 0.04, ...}
 var comparisons = make(map[string]Comparison)
 
 type Comparison struct {
@@ -126,7 +128,7 @@ func main() {
 	// start new transactions
 	//-----------------------------------//
 	compare_prices(binance_prices, kucoin_prices, bitz_prices, okex_prices, exclude)
-	fmt.Println(okex.Check_if_sold("NULS", "eciwn8h4f"))
+	//fmt.Println(okex.Check_if_sold("NULS", "eciwn8h4f"))
 
 	//-----------------------------------//
 	// get incomplete transactions
