@@ -23,23 +23,6 @@ type Price struct {
 	Timestamp time.Time
 }
 
-type Transaction struct {
-	ID            bson.ObjectId `bson:"_id,omitempty"`
-	Status        int
-	Token         string
-	Sell_price    float64
-	Sell_cost     float64
-	Sell_quantity float64
-	Sell_exchange string
-	Sell_tx_id    string
-	Buy_price     float64
-	Buy_cost      float64
-	Buy_quantity  float64
-	Buy_exchange  string
-	Buy_tx_id     string
-	Timestamp     time.Time
-}
-
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -70,8 +53,8 @@ func Create_transaction(token, exchange, transaction_id string, price float64) {
 
 	collection := session.DB(mgoDatabase).C("transactions")
 
-	row := Transaction{
-		Status:        utils.SellPlaced
+	row := utils.Transaction{
+		Status:        utils.SellPlaced,
 		Token:         token,
 		Sell_price:    price,
 		Sell_exchange: exchange,
@@ -85,16 +68,16 @@ func Create_transaction(token, exchange, transaction_id string, price float64) {
 
 }
 
-func Get_incomplete_transactions() []Transaction {
+func Get_incomplete_transactions() []utils.Transaction {
 
 	session := mgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(mgoDatabase).C("transactions")
 
-	var transactions []Transaction
+	var transactions []utils.Transaction
 
-	query := bson.M{"_id": bson.M{"$lt": BuyCompleted}}
+	query := bson.M{"_id": bson.M{"$lt": utils.BuyCompleted}}
 	err := collection.Find(query).All(&transactions)
 	check(err)
 

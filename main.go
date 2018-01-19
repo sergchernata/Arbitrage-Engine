@@ -126,25 +126,25 @@ func main() {
 
 // finds transactions that are in progress
 // checks on their current status and moves things along
-func resume_transactions(transactions []Transaction) {
+func resume_transactions(transactions []utils.Transaction) {
 
 	for t := range transactions {
 
 		switch t.Status {
 
-		case SellPlaced:
+		case utils.SellPlaced:
 			check_if_sold(t.Token, t.Sell_exchange, t.Sell_tx_id)
 
-		case SellCompleted:
+		case utils.SellCompleted:
 			start_transfer(t.Token, t.Sell_exchange)
 
-		case TransferStarted:
+		case utils.TransferStarted:
 			check_if_transferred(t.Token, t.Buy_exchange)
 
-		case TransferCompleted:
+		case utils.TransferCompleted:
 			place_buy_order(t.Token, t.Buy_exchange)
 
-		case BuyPlaced:
+		case utils.BuyPlaced:
 			check_if_bought(t.Token, t.Buy_exchange, t.Buy_tx_id)
 
 		default:

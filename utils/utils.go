@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"gopkg.in/mgo.v2/bson"
 	"math"
+	"time"
 )
 
 type Status int
@@ -14,6 +16,23 @@ const (
 	BuyPlaced                       // 4
 	BuyCompleted                    // 5
 )
+
+type Transaction struct {
+	ID            bson.ObjectId `bson:"_id,omitempty"`
+	Status        Status
+	Token         string
+	Sell_price    float64
+	Sell_cost     float64
+	Sell_quantity float64
+	Sell_exchange string
+	Sell_tx_id    string
+	Buy_price     float64
+	Buy_cost      float64
+	Buy_quantity  float64
+	Buy_exchange  string
+	Buy_tx_id     string
+	Timestamp     time.Time
+}
 
 func main() {
 
