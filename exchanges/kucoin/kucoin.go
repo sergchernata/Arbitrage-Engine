@@ -144,34 +144,29 @@ func Check_if_sold(token, sell_tx_id string) bool {
 
 }
 
-
 func Start_transfer(token, destination string) bool {
 
 	return true
 
 }
 
-
-func Check_if_transferred(token, transfer_id string) bool {
-
-	return true
-
-}
-
-
-func Place_buy_order(token, amount string) bool {
+func Check_if_transferred(sell_cost float64) bool {
 
 	return true
 
 }
 
+func Place_buy_order(token string, buy_cost float64) bool {
+
+	return true
+
+}
 
 func Check_if_bought(token, buy_tx_id string) bool {
 
 	return true
 
 }
-
 
 func Withdraw(token, amount, address string) (transaction_id string, sell_placed bool) {
 
