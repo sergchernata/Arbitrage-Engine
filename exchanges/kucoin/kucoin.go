@@ -29,8 +29,8 @@ type Holdings struct {
 }
 
 type Holding struct {
-	Symbol string `json:"coinType"`
-	Amount string `json:"balanceStr,Number"`
+	Symbol string  `json:"coinType"`
+	Amount float64 `json:"balanceStr,Number"`
 }
 
 type Prices struct {
@@ -59,9 +59,9 @@ func Initialize(url string, key string, secret string) {
 
 }
 
-func Get_balances(tokens map[string]bool) map[string]string {
+func Get_balances(tokens map[string]bool) map[string]float64 {
 
-	var holdings = make(map[string]string)
+	var holdings = make(map[string]float64)
 	var body []byte
 
 	for token, _ := range tokens {

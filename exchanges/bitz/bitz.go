@@ -58,6 +58,30 @@ func Initialize(url string, key string, secret string, tradepw string) {
 
 }
 
+func Get_balances(tokens map[string]bool) map[string]float64 {
+
+	var holdings = make(map[string]float64)
+	// var body []byte
+
+	// for token, _ := range tokens {
+
+	// 	var data = new(Holdings)
+	// 	var endpoint = "/v1/account/" + token + "/balance"
+	// 	var params = ""
+
+	// 	// perform api call
+	// 	body = execute("GET", api_url, endpoint, params, true)
+
+	// 	err := json.Unmarshal(body, &data)
+	// 	check(err)
+
+	// 	holdings[data.Holding.Symbol] = data.Holding.Amount
+
+	// }
+
+	return holdings
+}
+
 func Get_price(tokens map[string]bool) map[string]float64 {
 
 	var params = ""

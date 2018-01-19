@@ -24,8 +24,8 @@ type Holdings struct {
 }
 
 type Holding struct {
-	Symbol string `json:"asset"`
-	Amount string `json:"free,Number"`
+	Symbol string  `json:"asset"`
+	Amount float64 `json:"free,Number"`
 }
 
 type Prices []struct {
@@ -49,10 +49,10 @@ func Initialize(url string, key string, secret string) {
 
 }
 
-func Get_balances(tokens map[string]bool) map[string]string {
+func Get_balances(tokens map[string]bool) map[string]float64 {
 
 	var endpoint = "/api/v3/account"
-	var holdings = make(map[string]string)
+	var holdings = make(map[string]float64)
 	var data = new(Holdings)
 	var body []byte
 

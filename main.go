@@ -132,7 +132,11 @@ func main() {
 
 }
 
-func exclude_tokens(binance, kucoin, bitz, okex map[string]float64, exclude map[string]bool) {
+func exclude_tokens(binance, kucoin, bitz, okex map[string]float64, tokens map[string]bool) map[string]bool {
+
+	var exclude = make(map[string]bool)
+
+	return exclude
 
 }
 
@@ -262,8 +266,6 @@ func place_buy_order(token, buy_exchange string, buy_cost float64) bool {
 
 func check_if_bought(token, buy_exchange, buy_tx_id string) bool {
 
-	result := false
-
 	switch buy_exchange {
 
 	case "binance":
@@ -314,7 +316,7 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 
 		if difference >= percent_threshold {
 
-			place_sell_order(token, max_exchange, max_price)
+			// place_sell_order(token, max_exchange, max_price)
 
 		}
 
