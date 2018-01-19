@@ -1,14 +1,18 @@
 package utils
 
+import (
+	"math"
+)
+
 type Status int
 
-const(
-	SellPlaced Status = iota	// 0
-	SellCompleted				// 1
-	TransferStarted				// 2
-	TransferCompleted			// 3
-	BuyPlaced					// 4
-	BuyCompleted				// 5
+const (
+	SellPlaced        Status = iota // 0
+	SellCompleted                   // 1
+	TransferStarted                 // 2
+	TransferCompleted               // 3
+	BuyPlaced                       // 4
+	BuyCompleted                    // 5
 )
 
 func main() {
