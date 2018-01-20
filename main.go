@@ -128,7 +128,7 @@ func main() {
 	// start new transactions
 	//-----------------------------------//
 	compare_prices(binance_prices, kucoin_prices, bitz_prices, okex_prices, exclude)
-	fmt.Println(kucoin.Check_if_sold("NULS", "efwefwefwef"))
+	//fmt.Println(kucoin.Start_transfer("NULS", props["BINANCE_ETH_ADDRESS"], 103))
 
 	//-----------------------------------//
 	// get incomplete transactions
@@ -167,7 +167,7 @@ func resume_transactions(transactions []utils.Transaction) {
 			exchange := strings.ToUpper(comparisons[t.Token].Min_exchange)
 			destination := props[exchange+"_ETH_ADDRESS"]
 			buy_price := comparisons[t.Token].Min_price
-			start_transfer(t.Token, t.Sell_exchange, destination, t.Sell_cost, buy_price)
+			start_transfer("ETH", t.Sell_exchange, destination, t.Sell_cost, buy_price)
 
 		case utils.TransferStarted:
 			check_if_transferred(t.Sell_cost, t.Buy_exchange)
@@ -230,7 +230,7 @@ func start_transfer(token, sell_exchange, destination string, amount, buy_price 
 		tx_id, started = binance.Start_transfer(token, destination, amount)
 
 	case "kucoin":
-		tx_id, started = kucoin.Start_transfer(token, destination, amount)
+		started = kucoin.Start_transfer(token, destination, amount)
 
 	case "bitz":
 		tx_id, started = bitz.Start_transfer(token, destination, amount)

@@ -17,6 +17,12 @@ import (
 var api_url, api_key, api_secret string
 var api_eth_fee float64
 
+type Transfer_request struct {
+	Success bool   `json:"success"`
+	Code    string `json:"code"`
+	Data    string `json:"data"`
+}
+
 type Order struct {
 	Success bool `json:"success"`
 	Data    struct {
@@ -166,9 +172,24 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 
 }
 
-func Start_transfer(token, destination string, amount float64) (string, bool) {
+func Start_transfer(token, destination string, amount float64) bool {
 
-	return "", true
+	var params = fmt.Sprintf("address=%s&amount=%f&coin=%s", destination, amount, token)
+	var endpoint = "/v1/account/" + token + "/withdraw/apply"
+	var transfer = new(Transfer_request)
+	var body []byte
+
+	// perform api call
+	body = execute("POST", api_url, endpoint, params, true)
+
+	err := json.Unmarshal(body, &transfer)
+	check(err)
+
+	if transfer.Success {
+		return true
+	}
+
+	return false
 
 }
 
