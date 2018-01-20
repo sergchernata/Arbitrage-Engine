@@ -93,10 +93,10 @@ func init() {
 	mongo.Initialize(props["HOST"], props["DATABASE"], props["USERNAME"], props["PASSWORD"])
 
 	// initialize exchange packages
-	binance.Initialize(props["BINANCE_URL"], props["BINANCE_KEY"], props["BINANCE_SECRET"])
-	kucoin.Initialize(props["KUCOIN_URL"], props["KUCOIN_KEY"], props["KUCOIN_SECRET"])
-	bitz.Initialize(props["BITZ_URL"], props["BITZ_KEY"], props["BITZ_SECRET"], props["BITZ_TRADEPW"])
-	okex.Initialize(props["OKEX_URL"], props["OKEX_KEY"], props["OKEX_SECRET"], props["OKEX_TRADEPW"])
+	binance.Initialize(props["BINANCE_URL"], props["BINANCE_KEY"], props["BINANCE_SECRET"], props["BINANCE_ETH_FEE"])
+	kucoin.Initialize(props["KUCOIN_URL"], props["KUCOIN_KEY"], props["KUCOIN_SECRET"], props["KUCOIN_ETH_FEE"])
+	bitz.Initialize(props["BITZ_URL"], props["BITZ_KEY"], props["BITZ_SECRET"], props["BITZ_TRADEPW"], props["BITZ_ETH_FEE"])
+	okex.Initialize(props["OKEX_URL"], props["OKEX_KEY"], props["OKEX_SECRET"], props["OKEX_TRADEPW"], props["OKEX_ETH_FEE"])
 
 }
 
@@ -128,7 +128,7 @@ func main() {
 	// start new transactions
 	//-----------------------------------//
 	compare_prices(binance_prices, kucoin_prices, bitz_prices, okex_prices, exclude)
-	//fmt.Println(okex.Check_if_sold("NULS", "eciwn8h4f"))
+	fmt.Println(kucoin.Check_if_sold("NULS", "efwefwefwef"))
 
 	//-----------------------------------//
 	// get incomplete transactions
@@ -166,13 +166,15 @@ func resume_transactions(transactions []utils.Transaction) {
 		case utils.SellCompleted:
 			exchange := strings.ToUpper(comparisons[t.Token].Min_exchange)
 			destination := props[exchange+"_ETH_ADDRESS"]
-			start_transfer(t.Token, t.Sell_exchange, destination, t.Sell_cost)
+			buy_price := comparisons[t.Token].Min_price
+			start_transfer(t.Token, t.Sell_exchange, destination, t.Sell_cost, buy_price)
 
 		case utils.TransferStarted:
 			check_if_transferred(t.Sell_cost, t.Buy_exchange)
 
 		case utils.TransferCompleted:
-			place_buy_order(t.Token, t.Buy_exchange, t.Sell_cost)
+			quantity := t.Sell_cost / t.Buy_price
+			place_buy_order(t.Token, t.Buy_exchange, t.Sell_cost, quantity)
 
 		case utils.BuyPlaced:
 			check_if_bought(t.Token, t.Buy_exchange, t.Buy_tx_id)
@@ -188,21 +190,22 @@ func resume_transactions(transactions []utils.Transaction) {
 
 func check_if_sold(token, sell_exchange, sell_tx_id string) {
 
+	amount := 0.0
 	sold := false
 
 	switch sell_exchange {
 
 	case "binance":
-		sold = binance.Check_if_sold(token, sell_tx_id)
+		amount, sold = binance.Check_if_sold(token, sell_tx_id)
 
 	case "kucoin":
-		sold = kucoin.Check_if_sold(token, sell_tx_id)
+		amount, sold = kucoin.Check_if_sold(token, sell_tx_id)
 
 	case "bitz":
-		sold = bitz.Check_if_sold(token, sell_tx_id)
+		amount, sold = bitz.Check_if_sold(token, sell_tx_id)
 
 	case "okex":
-		sold = okex.Check_if_sold(token, sell_tx_id)
+		amount, sold = okex.Check_if_sold(token, sell_tx_id)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
@@ -210,12 +213,13 @@ func check_if_sold(token, sell_exchange, sell_tx_id string) {
 	}
 
 	if sold {
-
+		fmt.Println(amount)
+		// mongo.Mark_as_sold(sell_exchange, amount)
 	}
 
 }
 
-func start_transfer(token, sell_exchange, destination string, amount float64) {
+func start_transfer(token, sell_exchange, destination string, amount, buy_price float64) {
 
 	tx_id := ""
 	started := false
@@ -241,6 +245,7 @@ func start_transfer(token, sell_exchange, destination string, amount float64) {
 
 	if started {
 		fmt.Println(tx_id)
+		// mongo.Transfer_started(tx_id, buy_price)
 	}
 
 }
@@ -274,7 +279,7 @@ func check_if_transferred(sell_cost float64, buy_exchange string) {
 
 }
 
-func place_buy_order(token, buy_exchange string, buy_cost float64) {
+func place_buy_order(token, buy_exchange string, buy_cost, quantity float64) {
 
 	tx_id := ""
 	placed := false
@@ -291,7 +296,7 @@ func place_buy_order(token, buy_exchange string, buy_cost float64) {
 		tx_id, placed = bitz.Place_buy_order(token, buy_cost)
 
 	case "okex":
-		tx_id, placed = okex.Place_buy_order(token, buy_cost)
+		tx_id, placed = okex.Place_buy_order(token, quantity, buy_cost)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")

@@ -15,6 +15,7 @@ import (
 )
 
 var api_url, api_key, api_secret string
+var api_eth_fee float64
 
 type Order struct {
 	Success bool `json:"success"`
@@ -49,13 +50,14 @@ func check(e error) {
 	}
 }
 
-func Initialize(url string, key string, secret string) {
+func Initialize(url, key, secret, eth_fee string) {
 
 	fmt.Println("initializing kucoin package")
 
 	api_url = url
 	api_key = key
 	api_secret = secret
+	api_eth_fee, _ = strconv.ParseFloat(eth_fee, 64)
 
 }
 
@@ -141,9 +143,26 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 
 }
 
-func Check_if_sold(token, sell_tx_id string) bool {
+func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 
-	return true
+	var amount = 0.0
+	token += "-ETH"
+	var params = fmt.Sprintf("limit=%d&orderOid=%s&page=%d&symbol=%s&type=%s", 5, sell_tx_id, 1, token, "SELL")
+	var endpoint = "/v1/order/detail"
+	var order = new(Order)
+	var body []byte
+
+	// perform api call
+	body = execute("GET", api_url, endpoint, params, true)
+
+	err := json.Unmarshal(body, &order)
+	check(err)
+
+	if order.Data.Id == "" {
+		return amount, false
+	}
+
+	return amount, true
 
 }
 

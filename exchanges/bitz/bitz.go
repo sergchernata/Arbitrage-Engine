@@ -13,6 +13,7 @@ import (
 )
 
 var api_url, api_key, api_secret, api_tradepw string
+var api_eth_fee float64
 
 type Order struct {
 	Success bool `json:"success"`
@@ -47,7 +48,7 @@ func check(e error) {
 	}
 }
 
-func Initialize(url string, key string, secret string, tradepw string) {
+func Initialize(url, key, secret, tradepw, eth_fee string) {
 
 	fmt.Println("initializing bitz package")
 
@@ -55,6 +56,7 @@ func Initialize(url string, key string, secret string, tradepw string) {
 	api_key = key
 	api_secret = secret
 	api_tradepw = tradepw
+	api_eth_fee, _ = strconv.ParseFloat(eth_fee, 64)
 
 }
 
@@ -147,9 +149,10 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 
 }
 
-func Check_if_sold(token, sell_tx_id string) bool {
+func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 
-	return true
+	var amount = 0.0
+	return amount, true
 
 }
 
