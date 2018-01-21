@@ -23,6 +23,24 @@ type Transfer_request struct {
 	Data    string `json:"data"`
 }
 
+type Deposits struct {
+	Success bool `json:"success"`
+	Data    struct {
+		List []struct {
+			Fee      float64 `json:"fee,Number"`
+			Oid      string  `json:"oid"`
+			Type     string  `json:"type"`
+			Amount   float64 `json:"amount,Number"`
+			Remark   string  `json:"remark"`
+			Status   string  `json:"status"`
+			Address  string  `json:"address"`
+			Context  string  `json:"context"`
+			UserOid  string  `json:"userOid"`
+			CoinType string  `json:"coinType"`
+		} `json:"datas"`
+	} `json:"data"`
+}
+
 type Order struct {
 	Success bool `json:"success"`
 	Data    struct {
@@ -195,7 +213,24 @@ func Start_transfer(token, destination string, amount float64) bool {
 
 func Check_if_transferred(sell_cost float64) bool {
 
-	return true
+	var params = fmt.Sprintf("limit=%d&page=%d&type=%s", 10, 1, "DEPOSIT")
+	var endpoint = "/v1/account/ETH/wallet/records"
+	var deposits = new(Deposits)
+	var body []byte
+
+	// perform api call
+	body = execute("GET", api_url, endpoint, params, true)
+
+	err := json.Unmarshal(body, &deposits)
+	check(err)
+
+	for _, deposit := range deposits.Data.List {
+		if deposit.Amount == sell_cost && deposit.Status == "SUCCESS" {
+			return true
+		}
+	}
+
+	return false
 
 }
 
