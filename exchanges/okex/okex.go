@@ -14,6 +14,17 @@ import (
 var api_url, api_key, api_secret, api_tradepw string
 var api_eth_fee float64
 
+type Deposits struct {
+	List []struct {
+		Addr              string  `json:"addr"`
+		Account           string  `json:"account"`
+		Amount            float64 `json:"amount,Number"`
+		Transaction_value string  `json:"transaction_value"`
+		Fee               string  `json:"fee"`
+		Status            int     `json:"status,Number"`
+	} `json:"records"`
+}
+
 type Place_order struct {
 	Success bool   `json:"result"`
 	Id      string `json:"order_id"`
@@ -226,40 +237,31 @@ func Start_transfer(token, destination string, amount float64) (string, bool) {
 func Check_if_transferred(sell_cost float64) bool {
 
 	var endpoint = "/account_records.do"
-	var params = fmt.Sprintf("api_key=%s&current_page=1&page_length=10&symbol=eth&type=0", "okoko")
+	var params = fmt.Sprintf("api_key=%s&current_page=1&page_length=10&symbol=eth&type=0", api_key)
 	var signature = make_signature(params + "&secret_key=" + api_secret)
-	var open_orders = new(Open_orders)
+	var deposits = new(Deposits)
 	var body []byte
 
 	params = params + "&sign=" + signature
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
-	fmt.Println(string(body))
-	err := json.Unmarshal(body, &open_orders)
+
+	err := json.Unmarshal(body, &deposits)
 	check(err)
 
-	// no open orders means that everything has been filled
-	// if len(open_orders.Orders) == 0 {
-	// 	return true
-	// }
+	for _, deposit := range deposits.List {
+		if deposit.Amount == sell_cost && deposit.Status == 1 {
+			return true
+		}
+	}
 
-	// // if we find an open order with matching tx id
-	// // then the order has not been filled
-	// // this check is necessary because we may have
-	// // multiple ongoing transactions in the future
-	// for _, order := range open_orders.Orders {
-	// 	if order.Order_id == sell_tx_id {
-	// 		return false
-	// 	}
-	// }
-
-	return true
+	return false
 
 }
 
 func Place_buy_order(token string, amount, price float64) (string, bool) {
-	fmt.Println(amount)
+
 	var endpoint = "/trade.do"
 	var params = fmt.Sprintf("amount=%f&api_key=%s&price=%f&symbol=%s&type=%s", amount, api_key, price, token+"_ETH", "buy")
 	var signature = make_signature(params + "&secret_key=" + api_secret)
@@ -270,7 +272,7 @@ func Place_buy_order(token string, amount, price float64) (string, bool) {
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
-	fmt.Println(string(body))
+
 	err := json.Unmarshal(body, &order)
 	check(err)
 
