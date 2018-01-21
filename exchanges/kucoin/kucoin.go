@@ -234,9 +234,25 @@ func Check_if_transferred(sell_cost float64) bool {
 
 }
 
-func Place_buy_order(token string, buy_cost float64) (string, bool) {
+func Place_buy_order(token string, amount, price float64) (string, bool) {
 
-	return "", true
+	token += "-ETH"
+	var params = fmt.Sprintf("amount=%f&price=%f&symbol=%s&type=%s", amount, price, token, "BUY")
+	var endpoint = "/v1/order"
+	var order = new(Order)
+	var body []byte
+
+	// perform api call
+	body = execute("POST", api_url, endpoint, params, true)
+
+	err := json.Unmarshal(body, &order)
+	check(err)
+
+	if order.Data.Id == "" {
+		return "", false
+	}
+
+	return order.Data.Id, true
 
 }
 
