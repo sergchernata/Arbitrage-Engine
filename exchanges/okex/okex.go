@@ -18,7 +18,7 @@ type Deposits struct {
 	List []struct {
 		Addr              string  `json:"addr"`
 		Account           string  `json:"account"`
-		Amount            float64 `json:"amount,Number"`
+		Amount            float64 `json:"amount,string"`
 		Transaction_value string  `json:"transaction_value"`
 		Fee               string  `json:"fee"`
 		Status            int     `json:"status,Number"`
@@ -26,8 +26,8 @@ type Deposits struct {
 }
 
 type Place_order struct {
-	Success bool   `json:"result"`
-	Id      string `json:"order_id"`
+	Success bool        `json:"result"`
+	Id      json.Number `json:"order_id,Number"`
 }
 
 type Place_transfer struct {
@@ -35,19 +35,18 @@ type Place_transfer struct {
 	Id      string `json:"withdraw_id"`
 }
 
-type Open_orders struct {
+type Orders struct {
 	Success bool `json:"result"`
-	Orders  []struct {
-		Amount      string `json:"amount"`
-		Avg_price   string `json:"avg_price"`
-		Create_date string `json:"create_date"`
-		Deal_amount string `json:"deal_amount"`
-		Order_id    string `json:"order_id"`
-		Orders_id   string `json:"orders_id"`
-		Price       string `json:"price"`
-		Status      string `json:"status"`
-		Symbol      string `json:"symbol"`
-		Type        string `json:"type"`
+	List    []struct {
+		Amount      float64     `json:"amount,Number"`
+		Avg_price   float64     `json:"avg_price,Number"`
+		Deal_amount float64     `json:"deal_amount,Number"`
+		Order_id    json.Number `json:"order_id,Number"`
+		Orders_id   json.Number `json:"orders_id,Number"`
+		Price       float64     `json:"price,Number"`
+		Status      int         `json:"status,Number"`
+		Symbol      string      `json:"symbol"`
+		Type        string      `json:"type"`
 	} `json:"orders"`
 }
 
@@ -154,7 +153,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	var endpoint = "/trade.do"
 	var params = fmt.Sprintf("amount=%d&api_key=%s&price=%f&symbol=%s&type=%s", quantity, api_key, price, token+"_ETH", "sell")
 	var signature = make_signature(params + "&secret_key=" + api_secret)
-	var order = new(Place_order)
+	var place_order = new(Place_order)
 	var body []byte
 
 	params = params + "&sign=" + signature
@@ -162,14 +161,14 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
 
-	err := json.Unmarshal(body, &order)
+	err := json.Unmarshal(body, &place_order)
 	check(err)
 
-	if order.Success == false {
-		return "", false
+	if place_order.Success {
+		return place_order.Id.String(), true
 	}
 
-	return order.Id, true
+	return "", false
 
 }
 
@@ -179,7 +178,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	var endpoint = "/order_info.do"
 	var params = fmt.Sprintf("api_key=%s&order_id=%s&symbol=%s", api_key, sell_tx_id, token+"_ETH")
 	var signature = make_signature(params + "&secret_key=" + api_secret)
-	var open_orders = new(Open_orders)
+	var orders = new(Orders)
 	var body []byte
 
 	params = params + "&sign=" + signature
@@ -187,25 +186,16 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
 
-	err := json.Unmarshal(body, &open_orders)
+	err := json.Unmarshal(body, &orders)
 	check(err)
 
-	// no open orders means that everything has been filled
-	// if len(open_orders.Orders) == 0 {
-	// 	return true
-	// }
-
-	// if we find an open order with matching tx id
-	// then the order has not been filled
-	// this check is necessary because we may have
-	// multiple ongoing transactions in the future
-	for _, order := range open_orders.Orders {
-		if order.Order_id == sell_tx_id {
-			return amount, false
+	for _, order := range orders.List {
+		if order.Order_id.String() == sell_tx_id && order.Status == 2 {
+			return order.Amount * order.Price, true
 		}
 	}
 
-	return amount, true
+	return amount, false
 
 }
 
@@ -246,7 +236,7 @@ func Check_if_transferred(sell_cost float64) bool {
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
-
+	fmt.Println(string(body))
 	err := json.Unmarshal(body, &deposits)
 	check(err)
 
@@ -262,10 +252,11 @@ func Check_if_transferred(sell_cost float64) bool {
 
 func Place_buy_order(token string, amount, price float64) (string, bool) {
 
+	token += "_ETH"
 	var endpoint = "/trade.do"
-	var params = fmt.Sprintf("amount=%f&api_key=%s&price=%f&symbol=%s&type=%s", amount, api_key, price, token+"_ETH", "buy")
+	var params = fmt.Sprintf("amount=%f&api_key=%s&price=%f&symbol=%s&type=%s", amount, api_key, price, token, "buy")
 	var signature = make_signature(params + "&secret_key=" + api_secret)
-	var order = new(Place_order)
+	var place_order = new(Place_order)
 	var body []byte
 
 	params = params + "&sign=" + signature
@@ -273,20 +264,40 @@ func Place_buy_order(token string, amount, price float64) (string, bool) {
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
 
-	err := json.Unmarshal(body, &order)
+	err := json.Unmarshal(body, &place_order)
 	check(err)
 
-	if order.Success == false {
-		return "", false
+	if place_order.Success {
+		return place_order.Id.String(), true
 	}
 
-	return order.Id, true
+	return "", false
 
 }
 
 func Check_if_bought(token, buy_tx_id string) bool {
 
-	return true
+	var endpoint = "/order_info.do"
+	var params = fmt.Sprintf("api_key=%s&order_id=%s&symbol=%s", api_key, buy_tx_id, token+"_ETH")
+	var signature = make_signature(params + "&secret_key=" + api_secret)
+	var orders = new(Orders)
+	var body []byte
+
+	params = params + "&sign=" + signature
+
+	// perform api call
+	body = execute("POST", api_url, endpoint, params)
+
+	err := json.Unmarshal(body, &orders)
+	check(err)
+
+	for _, order := range orders.List {
+		if order.Order_id.String() == buy_tx_id && order.Status == 2 {
+			return true
+		}
+	}
+
+	return false
 
 }
 

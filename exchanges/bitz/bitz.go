@@ -168,7 +168,7 @@ func Check_if_transferred(sell_cost float64) bool {
 
 }
 
-func Place_buy_order(token string, buy_cost float64) (string, bool) {
+func Place_buy_order(token string, quantity, buy_cost float64) (string, bool) {
 
 	return "", true
 

@@ -180,7 +180,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	check(err)
 
 	if order.OrigQty != 0 && order.OrigQty == order.ExecutedQty {
-		return 0.0, true
+		return order.OrigQty * order.Price, true
 	}
 
 	return 0.0, false
