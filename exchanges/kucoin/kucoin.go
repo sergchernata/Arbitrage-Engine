@@ -66,8 +66,8 @@ type Holdings struct {
 }
 
 type Holding struct {
-	Symbol string `json:"coinType"`
-	Amount string `json:"balanceStr,Number"`
+	Symbol string  `json:"coinType"`
+	Amount float64 `json:"balance,Number"`
 }
 
 type Prices struct {
@@ -114,10 +114,7 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 		err := json.Unmarshal(body, &data)
 		check(err)
 
-		amount, err := strconv.ParseFloat(data.Holding.Amount, 64)
-		check(err)
-
-		holdings[data.Holding.Symbol] = amount
+		holdings[data.Holding.Symbol] = data.Holding.Amount
 
 	}
 
@@ -181,7 +178,6 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 
 func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 
-	var amount = 0.0
 	token += "-ETH"
 	var params = fmt.Sprintf("limit=%d&orderOid=%s&page=%d&symbol=%s&type=%s", 5, sell_tx_id, 1, token, "SELL")
 	var endpoint = "/v1/order/detail"
@@ -194,11 +190,11 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	err := json.Unmarshal(body, &order)
 	check(err)
 
-	if order.Data.DealValueTotal == 0 {
-		return amount, false
+	if order.Data.PendingAmount == 0 {
+		return order.Data.DealValueTotal, true
 	}
 
-	return amount, true
+	return 0.0, false
 
 }
 
@@ -289,27 +285,6 @@ func Check_if_bought(token, buy_tx_id string) bool {
 	return false
 
 }
-
-// func Withdraw(token, amount, address string) (transaction_id string, sell_placed bool) {
-
-// 	var params = fmt.Sprintf("address=%s&amount=%s", address, amount)
-// 	var endpoint = "/v1/account/" + token + "/withdraw/apply"
-// 	var transfer = new(Transfer_request)
-// 	var body []byte
-
-// 	// perform api call
-// 	body = execute("POST", api_url, endpoint, params, true)
-
-// 	err := json.Unmarshal(body, &transfer)
-// 	check(err)
-
-// 	if transfer.Success {
-// 		return true
-// 	}
-
-// 	return false
-
-// }
 
 func execute(method string, url string, endpoint string, params string, auth bool) []byte {
 
