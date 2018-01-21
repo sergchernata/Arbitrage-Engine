@@ -16,6 +16,23 @@ import (
 var api_url, api_key, api_secret string
 var api_eth_fee float64
 
+type Transfer_request struct {
+	Success bool   `json:"success"`
+	Msg     string `json:"msg"`
+	Id      string `json:"id"`
+}
+
+type Deposits struct {
+	List []struct {
+		Amount  float64 `json:"amount,Number"`
+		Asset   string  `json:"asset"`
+		address string  `json:"address"`
+		txId    string  `json:"txId"`
+		status  string  `json:"status"`
+	} `json:"depositList"`
+	Success bool `json:"success"`
+}
+
 type Order struct {
 	Id string `json:"orderId"`
 }
@@ -142,13 +159,43 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 
 func Start_transfer(token, destination string, amount float64) (string, bool) {
 
-	return "", true
+	var endpoint = fmt.Sprintf("/wapi/v3/withdraw.html?address=%s&amount=%f&asset=%s&name=bot", destination, amount, token)
+	var transfer = new(Transfer_request)
+	var body []byte
+
+	// perform api call
+	body = execute("POST", api_url+endpoint, true)
+
+	err := json.Unmarshal(body, &transfer)
+	check(err)
+
+	if transfer.Id == "" {
+		return "", false
+	}
+
+	return transfer.Id, true
 
 }
 
 func Check_if_transferred(sell_cost float64) bool {
 
-	return true
+	var endpoint = fmt.Sprintf("/wapi/v3/depositHistory.html?asset=ETH&status=1")
+	var deposits = new(Deposits)
+	var body []byte
+
+	// perform api call
+	body = execute("GET", api_url+endpoint, true)
+
+	err := json.Unmarshal(body, &deposits)
+	check(err)
+
+	for _, d := range deposits.List {
+		if d.Amount == sell_cost {
+			return true
+		}
+	}
+
+	return false
 
 }
 
