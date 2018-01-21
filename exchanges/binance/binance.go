@@ -33,8 +33,24 @@ type Deposits struct {
 	Success bool `json:"success"`
 }
 
+type Place_order struct {
+	Id json.Number `json:"orderId"`
+}
+
 type Order struct {
-	Id string `json:"orderId"`
+	Symbol        string  `json:"symbol"`
+	OrderId       float64 `json:"orderId.string"`
+	ClientOrderId string  `json:"clientOrderId"`
+	Price         float64 `json:"price,string"`
+	OrigQty       float64 `json:"origQty,string"`
+	ExecutedQty   float64 `json:"executedQty,string"`
+	Status        string  `json:"status"`
+	TimeInForce   string  `json:"timeInForce"`
+	Type          string  `json:"type"`
+	Side          string  `json:"side"`
+	StopPrice     float64 `json:"stopPrice,string"`
+	IcebergQty    float64 `json:"icebergQty,string"`
+	IsWorking     bool    `json:"isWorking"`
 }
 
 type Holdings struct {
@@ -133,27 +149,41 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 
 	token += "ETH"
 	var endpoint = fmt.Sprintf("/api/v3/order?symbol=%s&side=%s&type=%s&quantity=%d&price=%f&timeInForce=GTC", token, "SELL", "LIMIT", quantity, price)
-	var data = new(Order)
+	var place_order = new(Place_order)
 	var body []byte
 
 	// perform api call
 	body = execute("POST", api_url+endpoint, true)
 
-	err := json.Unmarshal(body, &data)
+	err := json.Unmarshal(body, &place_order)
 	check(err)
 
-	if data.Id == "" {
+	if place_order.Id == "" {
 		return "", false
 	}
 
-	return data.Id, true
+	return place_order.Id.String(), true
 
 }
 
 func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 
-	var amount = 0.0
-	return amount, true
+	token += "ETH"
+	var endpoint = fmt.Sprintf("/api/v3/order?orderId=%s&symbol=%s", sell_tx_id, token)
+	var order = new(Order)
+	var body []byte
+
+	// perform api call
+	body = execute("GET", api_url+endpoint, true)
+
+	err := json.Unmarshal(body, &order)
+	check(err)
+
+	if order.OrigQty != 0 && order.OrigQty == order.ExecutedQty {
+		return 0.0, true
+	}
+
+	return 0.0, false
 
 }
 
@@ -199,15 +229,45 @@ func Check_if_transferred(sell_cost float64) bool {
 
 }
 
-func Place_buy_order(token string, buy_cost float64) (string, bool) {
+func Place_buy_order(token string, quantity, price float64) (string, bool) {
 
-	return "", true
+	token += "ETH"
+	var endpoint = fmt.Sprintf("/api/v3/order?symbol=%s&side=%s&type=%s&quantity=%f&price=%f&timeInForce=GTC", token, "BUY", "LIMIT", quantity, price)
+	var place_order = new(Place_order)
+	var body []byte
+
+	// perform api call
+	body = execute("POST", api_url+endpoint, true)
+
+	err := json.Unmarshal(body, &place_order)
+	check(err)
+
+	if place_order.Id == "" {
+		return "", false
+	}
+
+	return place_order.Id.String(), true
 
 }
 
 func Check_if_bought(token, buy_tx_id string) bool {
 
-	return true
+	token += "ETH"
+	var endpoint = fmt.Sprintf("/api/v3/order?orderId=%s&symbol=%s", buy_tx_id, token)
+	var order = new(Order)
+	var body []byte
+
+	// perform api call
+	body = execute("GET", api_url+endpoint, true)
+
+	err := json.Unmarshal(body, &order)
+	check(err)
+
+	if order.OrigQty != 0 && order.OrigQty == order.ExecutedQty {
+		return true
+	}
+
+	return false
 
 }
 
