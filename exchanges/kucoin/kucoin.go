@@ -41,10 +41,22 @@ type Deposits struct {
 	} `json:"data"`
 }
 
-type Order struct {
+type Place_order struct {
 	Success bool `json:"success"`
 	Data    struct {
 		Id string `json:"orderOid"`
+	} `json:"data"`
+}
+
+type Order struct {
+	Success bool `json:"success"`
+	Data    struct {
+		DealValueTotal   float64 `json:"dealValueTotal,Number"`
+		DealPriceAverage float64 `json:"dealPriceAverage,Number"`
+		FeeTotal         float64 `json:"feeTotal,Number"`
+		DealAmount       float64 `json:"dealAmount,Number"`
+		OrderPrice       float64 `json:"orderPrice,Number"`
+		PendingAmount    float64 `json:"pendingAmount,Number"`
 	} `json:"data"`
 }
 
@@ -150,20 +162,20 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	token += "-ETH"
 	var params = fmt.Sprintf("amount=%d&price=%f&symbol=%s&type=%s", quantity, price, token, "SELL")
 	var endpoint = "/v1/order"
-	var order = new(Order)
+	var place_order = new(Place_order)
 	var body []byte
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params, true)
 
-	err := json.Unmarshal(body, &order)
+	err := json.Unmarshal(body, &place_order)
 	check(err)
 
-	if order.Data.Id == "" {
+	if place_order.Data.Id == "" {
 		return "", false
 	}
 
-	return order.Data.Id, true
+	return place_order.Data.Id, true
 
 }
 
@@ -182,7 +194,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	err := json.Unmarshal(body, &order)
 	check(err)
 
-	if order.Data.Id == "" {
+	if order.Data.DealValueTotal == 0 {
 		return amount, false
 	}
 
@@ -239,49 +251,65 @@ func Place_buy_order(token string, amount, price float64) (string, bool) {
 	token += "-ETH"
 	var params = fmt.Sprintf("amount=%f&price=%f&symbol=%s&type=%s", amount, price, token, "BUY")
 	var endpoint = "/v1/order"
-	var order = new(Order)
+	var place_order = new(Place_order)
 	var body []byte
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params, true)
 
-	err := json.Unmarshal(body, &order)
+	err := json.Unmarshal(body, &place_order)
 	check(err)
 
-	if order.Data.Id == "" {
+	if place_order.Data.Id == "" {
 		return "", false
 	}
 
-	return order.Data.Id, true
+	return place_order.Data.Id, true
 
 }
 
 func Check_if_bought(token, buy_tx_id string) bool {
 
-	return true
-
-}
-
-func Withdraw(token, amount, address string) (transaction_id string, sell_placed bool) {
-
-	var params = fmt.Sprintf("address=%s&amount=%s", address, amount)
-	var endpoint = "/v1/account/" + token + "/withdraw/apply"
+	token += "-ETH"
+	var params = fmt.Sprintf("limit=%d&orderOid=%s&page=%d&symbol=%s&type=%s", 5, buy_tx_id, 1, token, "BUY")
+	var endpoint = "/v1/order/detail"
 	var order = new(Order)
 	var body []byte
 
 	// perform api call
-	body = execute("POST", api_url, endpoint, params, true)
+	body = execute("GET", api_url, endpoint, params, true)
 
 	err := json.Unmarshal(body, &order)
 	check(err)
 
-	if order.Data.Id == "" {
-		return "", false
+	if order.Data.PendingAmount == 0 {
+		return true
 	}
 
-	return order.Data.Id, true
+	return false
 
 }
+
+// func Withdraw(token, amount, address string) (transaction_id string, sell_placed bool) {
+
+// 	var params = fmt.Sprintf("address=%s&amount=%s", address, amount)
+// 	var endpoint = "/v1/account/" + token + "/withdraw/apply"
+// 	var transfer = new(Transfer_request)
+// 	var body []byte
+
+// 	// perform api call
+// 	body = execute("POST", api_url, endpoint, params, true)
+
+// 	err := json.Unmarshal(body, &transfer)
+// 	check(err)
+
+// 	if transfer.Success {
+// 		return true
+// 	}
+
+// 	return false
+
+// }
 
 func execute(method string, url string, endpoint string, params string, auth bool) []byte {
 
