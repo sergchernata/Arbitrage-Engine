@@ -290,27 +290,6 @@ func Check_if_bought(token, buy_tx_id string) bool {
 
 }
 
-func Withdraw(token, amount, address string) (transaction_id string, sell_placed bool) {
-
-	var params = fmt.Sprintf("address=%s&amount=%s", address, amount)
-	var endpoint = "/v1/account/" + token + "/withdraw/apply"
-	var order = new(Place_order)
-	var body []byte
-
-	// perform api call
-	body = execute("POST", api_url, endpoint, params)
-
-	err := json.Unmarshal(body, &order)
-	check(err)
-
-	if order.Id == "" {
-		return "", false
-	}
-
-	return order.Id, true
-
-}
-
 func make_signature(params string) string {
 
 	hasher := md5.New()
