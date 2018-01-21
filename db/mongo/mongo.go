@@ -46,7 +46,7 @@ func Initialize(host string, database string, username string, password string) 
 
 }
 
-func Create_transaction(token, exchange, transaction_id string, price float64) {
+func Place_sell_order(token, exchange, transaction_id string, price float64) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
@@ -65,6 +65,76 @@ func Create_transaction(token, exchange, transaction_id string, price float64) {
 	if err := collection.Insert(row); err != nil {
 		panic(err)
 	}
+
+}
+
+func Sell_order_completed(row_id, sell_exchange string, amount float64) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	query := bson.M{"_id": row_id}
+	change := bson.M{"$set": bson.M{"Status": utils.SellCompleted, "Sell_cost": amount}}
+	err := collection.Update(query, change)
+	check(err)
+
+}
+
+func Transfer_started(row_id, tx_id string, buy_price float64) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	query := bson.M{"_id": row_id}
+	change := bson.M{"$set": bson.M{"Status": utils.TransferStarted}}
+	err := collection.Update(query, change)
+	check(err)
+
+}
+
+func Transfer_completed(row_id, tx_id string, buy_price float64) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	query := bson.M{"_id": row_id}
+	change := bson.M{"$set": bson.M{"Status": utils.TransferCompleted}}
+	err := collection.Update(query, change)
+	check(err)
+
+}
+
+func Buy_order_placed(row_id, tx_id string, buy_price float64) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	query := bson.M{"_id": row_id}
+	change := bson.M{"$set": bson.M{"Status": utils.BuyPlaced}}
+	err := collection.Update(query, change)
+	check(err)
+
+}
+
+func Buy_order_completed(row_id, tx_id string, buy_price float64) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	query := bson.M{"_id": row_id}
+	change := bson.M{"$set": bson.M{"Status": utils.BuyCompleted}}
+	err := collection.Update(query, change)
+	check(err)
 
 }
 

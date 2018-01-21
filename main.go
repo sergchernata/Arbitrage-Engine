@@ -128,7 +128,6 @@ func main() {
 	// start new transactions
 	//-----------------------------------//
 	compare_prices(binance_prices, kucoin_prices, bitz_prices, okex_prices, exclude)
-	//fmt.Println(kucoin.Start_transfer("NULS", props["BINANCE_ETH_ADDRESS"], 103))
 
 	//-----------------------------------//
 	// get incomplete transactions
@@ -161,23 +160,23 @@ func resume_transactions(transactions []utils.Transaction) {
 		switch t.Status {
 
 		case utils.SellPlaced:
-			check_if_sold(t.Token, t.Sell_exchange, t.Sell_tx_id)
+			check_if_sold(t.ID.Hex(), t.Token, t.Sell_exchange, t.Sell_tx_id)
 
 		case utils.SellCompleted:
 			exchange := strings.ToUpper(comparisons[t.Token].Min_exchange)
 			destination := props[exchange+"_ETH_ADDRESS"]
 			buy_price := comparisons[t.Token].Min_price
-			start_transfer("ETH", t.Sell_exchange, destination, t.Sell_cost, buy_price)
+			start_transfer(t.ID.Hex(), "ETH", t.Sell_exchange, destination, t.Sell_cost, buy_price)
 
 		case utils.TransferStarted:
-			check_if_transferred(t.Sell_cost, t.Buy_exchange)
+			check_if_transferred(t.ID.Hex(), t.Buy_exchange, t.Sell_cost)
 
 		case utils.TransferCompleted:
 			quantity := t.Sell_cost / t.Buy_price
-			place_buy_order(t.Token, t.Buy_exchange, t.Sell_cost, quantity)
+			place_buy_order(t.ID.Hex(), t.Token, t.Buy_exchange, t.Sell_cost, quantity)
 
 		case utils.BuyPlaced:
-			check_if_bought(t.Token, t.Buy_exchange, t.Buy_tx_id)
+			check_if_bought(t.ID.Hex(), t.Token, t.Buy_exchange, t.Buy_tx_id)
 
 		default:
 			panic("Invalid transaction status.")
@@ -188,7 +187,7 @@ func resume_transactions(transactions []utils.Transaction) {
 
 }
 
-func check_if_sold(token, sell_exchange, sell_tx_id string) {
+func check_if_sold(row_id, token, sell_exchange, sell_tx_id string) {
 
 	amount := 0.0
 	sold := false
@@ -214,12 +213,12 @@ func check_if_sold(token, sell_exchange, sell_tx_id string) {
 
 	if sold {
 		fmt.Println(amount)
-		// mongo.Mark_as_sold(sell_exchange, amount)
+		// mongo.Sell_order_completed(sell_exchange, amount)
 	}
 
 }
 
-func start_transfer(token, sell_exchange, destination string, amount, buy_price float64) {
+func start_transfer(row_id, token, sell_exchange, destination string, amount, buy_price float64) {
 
 	tx_id := ""
 	started := false
@@ -250,7 +249,7 @@ func start_transfer(token, sell_exchange, destination string, amount, buy_price 
 
 }
 
-func check_if_transferred(sell_cost float64, buy_exchange string) {
+func check_if_transferred(row_id, buy_exchange string, sell_cost float64) {
 
 	transferred := false
 
@@ -274,12 +273,12 @@ func check_if_transferred(sell_cost float64, buy_exchange string) {
 	}
 
 	if transferred {
-
+		// mongo.Transfer_completed(tx_id)
 	}
 
 }
 
-func place_buy_order(token, buy_exchange string, buy_cost, quantity float64) {
+func place_buy_order(row_id, token, buy_exchange string, buy_cost, quantity float64) {
 
 	tx_id := ""
 	placed := false
@@ -287,13 +286,13 @@ func place_buy_order(token, buy_exchange string, buy_cost, quantity float64) {
 	switch buy_exchange {
 
 	case "binance":
-		tx_id, placed = binance.Place_buy_order(token, buy_cost)
+		tx_id, placed = binance.Place_buy_order(token, quantity, buy_cost)
 
 	case "kucoin":
-		tx_id, placed = kucoin.Place_buy_order(token, buy_cost)
+		tx_id, placed = kucoin.Place_buy_order(token, quantity, buy_cost)
 
 	case "bitz":
-		tx_id, placed = bitz.Place_buy_order(token, buy_cost)
+		tx_id, placed = bitz.Place_buy_order(token, quantity, buy_cost)
 
 	case "okex":
 		tx_id, placed = okex.Place_buy_order(token, quantity, buy_cost)
@@ -305,11 +304,12 @@ func place_buy_order(token, buy_exchange string, buy_cost, quantity float64) {
 
 	if placed {
 		fmt.Println(tx_id)
+		// mongo.Buy_order_placed(tx_id, buy_price)
 	}
 
 }
 
-func check_if_bought(token, buy_exchange, buy_tx_id string) {
+func check_if_bought(row_id, token, buy_exchange, buy_tx_id string) {
 
 	bought := false
 
@@ -333,7 +333,7 @@ func check_if_bought(token, buy_exchange, buy_tx_id string) {
 	}
 
 	if bought {
-
+		// mongo.Buy_order_completed(tx_id, buy_price)
 	}
 
 }
@@ -436,16 +436,7 @@ func place_sell_order(token, exchange string, price float64) {
 	}
 
 	if sell_placed {
-		mongo.Create_transaction(token, exchange, transaction_id, price)
+		mongo.Place_sell_order(token, exchange, transaction_id, price)
 	}
 
 }
-
-// TODO:
-
-// check transaction progress
-// if sale is complete, transfer ETH to exchange with lowest price
-
-// finalize transaction, restore balances on all exchanges
-
-// occasionally, send our profit coins to trezor address
