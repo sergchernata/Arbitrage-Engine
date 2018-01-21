@@ -96,7 +96,7 @@ func Transfer_started(row_id, tx_id string, buy_price float64) {
 
 }
 
-func Transfer_completed(row_id, tx_id string, buy_price float64) {
+func Transfer_completed(row_id string) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
@@ -110,7 +110,7 @@ func Transfer_completed(row_id, tx_id string, buy_price float64) {
 
 }
 
-func Buy_order_placed(row_id, tx_id string, buy_price float64) {
+func Buy_order_placed(row_id, tx_id string, quantity, buy_price float64) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
@@ -118,13 +118,13 @@ func Buy_order_placed(row_id, tx_id string, buy_price float64) {
 	collection := session.DB(mgoDatabase).C("transactions")
 
 	query := bson.M{"_id": row_id}
-	change := bson.M{"$set": bson.M{"Status": utils.BuyPlaced}}
+	change := bson.M{"$set": bson.M{"Status": utils.BuyPlaced, "Buy_tx_id": tx_id, "Buy_price": buy_price, "Buy_quantity": quantity}}
 	err := collection.Update(query, change)
 	check(err)
 
 }
 
-func Buy_order_completed(row_id, tx_id string, buy_price float64) {
+func Buy_order_completed(row_id string) {
 
 	session := mgoSession.Clone()
 	defer session.Close()

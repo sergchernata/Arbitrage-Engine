@@ -173,7 +173,8 @@ func resume_transactions(transactions []utils.Transaction) {
 
 		case utils.TransferCompleted:
 			quantity := t.Sell_cost / t.Buy_price
-			place_buy_order(t.ID.Hex(), t.Token, t.Buy_exchange, t.Sell_cost, quantity)
+			buy_price := comparisons[t.Token].Min_price
+			place_buy_order(t.ID.Hex(), t.Token, t.Buy_exchange, buy_price, quantity)
 
 		case utils.BuyPlaced:
 			check_if_bought(t.ID.Hex(), t.Token, t.Buy_exchange, t.Buy_tx_id)
@@ -212,8 +213,7 @@ func check_if_sold(row_id, token, sell_exchange, sell_tx_id string) {
 	}
 
 	if sold {
-		fmt.Println(amount)
-		// mongo.Sell_order_completed(sell_exchange, amount)
+		mongo.Sell_order_completed(row_id, sell_exchange, amount)
 	}
 
 }
@@ -244,7 +244,7 @@ func start_transfer(row_id, token, sell_exchange, destination string, amount, bu
 
 	if started {
 		fmt.Println(tx_id)
-		// mongo.Transfer_started(tx_id, buy_price)
+		mongo.Transfer_started(row_id, tx_id, buy_price)
 	}
 
 }
@@ -273,12 +273,12 @@ func check_if_transferred(row_id, buy_exchange string, sell_cost float64) {
 	}
 
 	if transferred {
-		// mongo.Transfer_completed(tx_id)
+		mongo.Transfer_completed(row_id)
 	}
 
 }
 
-func place_buy_order(row_id, token, buy_exchange string, buy_cost, quantity float64) {
+func place_buy_order(row_id, token, buy_exchange string, buy_price, quantity float64) {
 
 	tx_id := ""
 	placed := false
@@ -286,16 +286,16 @@ func place_buy_order(row_id, token, buy_exchange string, buy_cost, quantity floa
 	switch buy_exchange {
 
 	case "binance":
-		tx_id, placed = binance.Place_buy_order(token, quantity, buy_cost)
+		tx_id, placed = binance.Place_buy_order(token, quantity, buy_price)
 
 	case "kucoin":
-		tx_id, placed = kucoin.Place_buy_order(token, quantity, buy_cost)
+		tx_id, placed = kucoin.Place_buy_order(token, quantity, buy_price)
 
 	case "bitz":
-		tx_id, placed = bitz.Place_buy_order(token, quantity, buy_cost)
+		tx_id, placed = bitz.Place_buy_order(token, quantity, buy_price)
 
 	case "okex":
-		tx_id, placed = okex.Place_buy_order(token, quantity, buy_cost)
+		tx_id, placed = okex.Place_buy_order(token, quantity, buy_price)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
@@ -304,7 +304,7 @@ func place_buy_order(row_id, token, buy_exchange string, buy_cost, quantity floa
 
 	if placed {
 		fmt.Println(tx_id)
-		// mongo.Buy_order_placed(tx_id, buy_price)
+		mongo.Buy_order_placed(row_id, tx_id, quantity, buy_price)
 	}
 
 }
@@ -333,7 +333,7 @@ func check_if_bought(row_id, token, buy_exchange, buy_tx_id string) {
 	}
 
 	if bought {
-		// mongo.Buy_order_completed(tx_id, buy_price)
+		mongo.Buy_order_completed(row_id)
 	}
 
 }
