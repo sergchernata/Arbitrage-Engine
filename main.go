@@ -106,6 +106,8 @@ func init() {
 		}
 	}
 
+	// initialize any secondary variables
+	// that need to be globablly available
 	percent_threshold, err = strconv.ParseFloat(props["PERCENT_THRESHOLD"], 64)
 	check(err)
 
@@ -190,7 +192,7 @@ func exclude_tokens(binance, kucoin, bitz, okex map[string]float64) map[string]b
 // finds transactions that are in progress
 // checks on their current status and moves things along
 func resume_transactions(transactions []utils.Transaction) {
-	fmt.Println(transactions)
+
 	for _, t := range transactions {
 
 		switch t.Status {
