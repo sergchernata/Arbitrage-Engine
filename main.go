@@ -40,6 +40,10 @@ var comparisons = make(map[string]Comparison)
 // charged by each exchange upon withdrawal
 var fees = make(map[string]float64)
 
+// percentage threshold is the difference between min and max price
+// required for us to profit from running arbitrage
+var percent_threshold float64
+
 type Comparison struct {
 	Min_price    float64
 	Max_price    float64
@@ -101,6 +105,9 @@ func init() {
 			}
 		}
 	}
+
+	percent_threshold, err = strconv.ParseFloat(props["PERCENT_THRESHOLD"], 64)
+	check(err)
 
 	// initialize database connection
 	mongo.Initialize(props["HOST"], props["DATABASE"], props["USERNAME"], props["PASSWORD"])
@@ -183,7 +190,7 @@ func exclude_tokens(binance, kucoin, bitz, okex map[string]float64) map[string]b
 // finds transactions that are in progress
 // checks on their current status and moves things along
 func resume_transactions(transactions []utils.Transaction) {
-
+	fmt.Println(transactions)
 	for _, t := range transactions {
 
 		switch t.Status {
@@ -195,7 +202,21 @@ func resume_transactions(transactions []utils.Transaction) {
 			exchange := strings.ToUpper(comparisons[t.Token].Min_exchange)
 			destination := props[exchange+"_ETH_ADDRESS"]
 			buy_price := comparisons[t.Token].Min_price
-			start_transfer(t.ID.Hex(), "ETH", t.Sell_exchange, destination, t.Sell_cost, buy_price)
+
+			// time has passed since the sale was first placed
+			// it has been fulfilled, but the prices may have changed
+			// enough for us to lose the % difference required to profit
+			comparison := comparisons[t.Token]
+
+			// calculte percentage difference
+			difference := (1 - comparison.Min_price/comparison.Max_price) * 100
+			difference = utils.ToFixed(difference, 0)
+
+			// check if difference is over the thershold
+			// if so, trigger the sell
+			if difference >= percent_threshold {
+				start_transfer(t.ID.Hex(), "ETH", t.Sell_exchange, destination, t.Sell_cost, buy_price)
+			}
 
 		case utils.TransferStarted:
 			check_if_transferred(t.ID.Hex(), t.Buy_exchange, t.Sell_cost)
@@ -394,16 +415,11 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 		// calculte percentage difference
 		difference := (1 - comparison.Min_price/comparison.Max_price) * 100
 		difference = utils.ToFixed(difference, 0)
-
+		fmt.Println(comparison, "Difference:", difference, "%")
 		// check if difference is over the thershold
 		// if so, trigger the sell
-		percent_threshold, err := strconv.ParseFloat(props["PERCENT_THRESHOLD"], 64)
-		check(err)
-
 		if difference >= percent_threshold {
-
-			// place_sell_order(token, max_exchange, max_price)
-
+			// place_sell_order(token, comparison.Max_exchange, comparison.Max_price)
 		}
 
 	}
