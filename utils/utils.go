@@ -46,3 +46,11 @@ func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(Round(num*output)) / output
 }
+
+func Ternary(a, b int, condition bool) int {
+	if condition {
+		return a
+	} else {
+		return b
+	}
+}

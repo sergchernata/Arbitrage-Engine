@@ -122,7 +122,7 @@ func main() {
 	// exclude tokens that have available balance
 	// on only 1 exchange, need 2 min for arbitrage
 	//-----------------------------------//
-	exclude := exclude_tokens(binance_balances, kucoin_balances, bitz_balances, okex_balances, tokens)
+	exclude := exclude_tokens(binance_balances, kucoin_balances, bitz_balances, okex_balances)
 
 	//-----------------------------------//
 	// start new transactions
@@ -143,9 +143,25 @@ func main() {
 
 }
 
-func exclude_tokens(binance, kucoin, bitz, okex map[string]float64, tokens map[string]bool) map[string]bool {
+func exclude_tokens(binance, kucoin, bitz, okex map[string]float64) map[string]bool {
 
 	var exclude = make(map[string]bool)
+
+	for token := range tokens {
+
+		quant := float64(trade_quantity[token])
+
+		binance_sufficient := utils.Ternary(1, 0, binance[token] >= quant)
+		kucoin_sufficient := utils.Ternary(1, 0, kucoin[token] >= quant)
+		bitz_sufficient := utils.Ternary(1, 0, bitz[token] >= quant)
+		okex_sufficient := utils.Ternary(1, 0, okex[token] >= quant)
+		sufficient_balance := binance_sufficient + kucoin_sufficient + bitz_sufficient + okex_sufficient
+
+		if sufficient_balance < 2 {
+			exclude[token] = true
+		}
+
+	}
 
 	return exclude
 
@@ -344,6 +360,10 @@ func check_if_bought(row_id, token, buy_exchange, buy_tx_id string) {
 func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[string]bool) {
 
 	for token := range tokens {
+
+		if exclude[token] {
+			continue
+		}
 
 		pair := token + "-ETH"
 
