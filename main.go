@@ -159,9 +159,10 @@ func main() {
 	//-----------------------------------//
 	// save prices from all exchanges
 	//-----------------------------------//
-	// mongo.Save_prices(binance_prices)
-	// mongo.Save_prices(kucoin_prices)
-	// mongo.Save_prices(bitz_prices)
+	mongo.Save_prices(binance_prices, "binance")
+	mongo.Save_prices(kucoin_prices, "kucoin")
+	mongo.Save_prices(bitz_prices, "bitz")
+	mongo.Save_prices(okex_prices, "okex")
 
 }
 

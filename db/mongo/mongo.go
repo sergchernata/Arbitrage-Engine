@@ -18,7 +18,7 @@ var mgoDatabase string
 type Price struct {
 	ID        bson.ObjectId `bson:"_id,omitempty"`
 	Token     string
-	Price     string
+	Price     float64
 	Exchange  string
 	Timestamp time.Time
 }
@@ -155,7 +155,7 @@ func Get_incomplete_transactions() []utils.Transaction {
 
 }
 
-func Save_prices(tokens map[string]string, exchange string) {
+func Save_prices(tokens map[string]float64, exchange string) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
