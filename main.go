@@ -125,6 +125,12 @@ func init() {
 func main() {
 
 	//-----------------------------------//
+	// check for flags that kill bot
+	// for safety reasons, ie bad transaction
+	//-----------------------------------//
+	check_flags(mongo.Get_flags())
+
+	//-----------------------------------//
 	// get prices from all exchanges
 	//-----------------------------------//
 	binance_prices := binance.Get_price(tokens)
@@ -163,6 +169,14 @@ func main() {
 	mongo.Save_prices(kucoin_prices, "kucoin")
 	mongo.Save_prices(bitz_prices, "bitz")
 	mongo.Save_prices(okex_prices, "okex")
+
+}
+
+func check_flags(flags []Flag) {
+
+	if len(flags) > 0 {
+		panic("Flag detected, bot execution stalled.")
+	}
 
 }
 
