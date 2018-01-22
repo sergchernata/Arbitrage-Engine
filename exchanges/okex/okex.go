@@ -141,7 +141,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		price, err := strconv.ParseFloat(data.Data.Last, 64)
 		check(err)
 
-		prices[token] = price
+		prices[token+"-ETH"] = price
 
 	}
 
