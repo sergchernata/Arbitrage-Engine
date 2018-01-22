@@ -143,11 +143,14 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		symbol := v.Symbol
 		is_eth_pair := strings.HasSuffix(symbol, "-ETH")
 		token := strings.TrimSuffix(symbol, "-ETH")
-		price, err := strconv.ParseFloat(string(v.Price), 64)
-		check(err)
 
-		if is_eth_pair && tokens[token] {
-			prices[token+"-ETH"] = price
+		if v.Price != "" {
+			price, err := strconv.ParseFloat(string(v.Price), 64)
+			check(err)
+
+			if is_eth_pair && tokens[token] {
+				prices[token+"-ETH"] = price
+			}
 		}
 	}
 
