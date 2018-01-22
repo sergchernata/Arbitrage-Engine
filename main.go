@@ -36,6 +36,10 @@ var trade_quantity = make(map[string]int)
 // Ex: ["NULS"] = {"Min_price" : 0.04, ...}
 var comparisons = make(map[string]Comparison)
 
+// currently limited to holding ETH fee
+// charged by each exchange upon withdrawal
+var fees = make(map[string]float64)
+
 type Comparison struct {
 	Min_price    float64
 	Max_price    float64
@@ -80,6 +84,15 @@ func init() {
 						trade_quantity[temp[0]], _ = strconv.Atoi(temp[1])
 					}
 				}
+
+			} else if strings.HasSuffix(split[0], "_FEE") {
+
+				exchange := strings.Split(split[0], "_")[0]
+				exchange = strings.ToLower(exchange)
+				fee, err := strconv.ParseFloat(split[1], 64)
+				check(err)
+
+				fees[exchange] = fee
 
 			} else {
 
@@ -268,6 +281,7 @@ func start_transfer(row_id, token, sell_exchange, destination string, amount, bu
 func check_if_transferred(row_id, buy_exchange string, sell_cost float64) {
 
 	transferred := false
+	sell_cost -= fees[buy_exchange]
 
 	switch buy_exchange {
 
@@ -378,7 +392,8 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 		comparisons[token] = comparison
 
 		// calculte percentage difference
-		difference := (1 - comparison.Max_price/comparison.Min_price) * 100
+		difference := (1 - comparison.Min_price/comparison.Max_price) * 100
+		difference = utils.ToFixed(difference, 0)
 
 		// check if difference is over the thershold
 		// if so, trigger the sell
