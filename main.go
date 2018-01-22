@@ -172,14 +172,6 @@ func main() {
 
 }
 
-func check_flags(flags []Flag) {
-
-	if len(flags) > 0 {
-		panic("Flag detected, bot execution stalled.")
-	}
-
-}
-
 func exclude_tokens(binance, kucoin, bitz, okex map[string]float64) map[string]bool {
 
 	var exclude = make(map[string]bool)
@@ -241,6 +233,15 @@ func resume_transactions(transactions []utils.Transaction) {
 		case utils.TransferCompleted:
 			quantity := t.Sell_cost / t.Buy_price
 			buy_price := comparisons[t.Token].Min_price
+
+			// if we're about to place a buy order
+			// for a less than profitable amount of tokens
+			// throw error and kill bot
+			// 4 is an arbitrary number for now, should be revisited
+			if quantity < trade_quantity[t.Token] + 4 {
+				throw_flag()
+			}
+
 			place_buy_order(t.ID.Hex(), t.Token, t.Buy_exchange, buy_price, quantity)
 
 		case utils.BuyPlaced:
@@ -506,5 +507,20 @@ func place_sell_order(token, exchange string, price float64) {
 	if sell_placed {
 		mongo.Place_sell_order(token, exchange, transaction_id, price)
 	}
+
+}
+
+func check_flags(flags []Flag) {
+
+	if len(flags) > 0 {
+		panic("Flag detected, bot execution stalled.")
+	}
+
+}
+
+func throw_flag() {
+
+	mongo.Flag("Buying less than profitable quantity.")
+	panic("Threw flag, killing bot.")
 
 }
