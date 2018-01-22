@@ -23,6 +23,16 @@ type Price struct {
 	Timestamp time.Time
 }
 
+type Log struct {
+	Message  string
+	Timestamp time.Time
+}
+
+type Flag struct {
+	Message  string
+	Timestamp time.Time
+}
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -176,5 +186,102 @@ func Save_prices(tokens map[string]float64, exchange string) {
 		}
 
 	}
+
+}
+
+//-----------------------------------//
+// flag methods
+//
+// mostly used for killing bot
+// in case of bad transaction
+//-----------------------------------//
+func Flag(message string) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("flags")
+
+	row := Flag{
+		Message:   message,
+		Timestamp: time.Now(),
+	}
+
+	if err := collection.Insert(row); err != nil {
+		panic(err)
+	}
+
+}
+
+func Get_flags() []Flag {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("flags")
+
+	var flags []Flag
+
+	err := collection.Find(nil).All(&flags)
+	check(err)
+
+	return flags
+
+}
+
+func Clear_flags() {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("flags")
+	collection.RemoveAll(nil)
+
+}
+
+//-----------------------------------//
+// log methods
+//-----------------------------------//
+func Log(message string) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("log")
+
+	row := Log{
+		Message:   message,
+		Timestamp: time.Now(),
+	}
+
+	if err := collection.Insert(row); err != nil {
+		panic(err)
+	}
+
+}
+
+func Get_logs() []Log {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("log")
+
+	var logs []Log
+
+	err := collection.Find(nil).All(&logs)
+	check(err)
+
+	return logs
+
+}
+
+func Empty_log() {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("log")
+	collection.RemoveAll(nil)
 
 }
