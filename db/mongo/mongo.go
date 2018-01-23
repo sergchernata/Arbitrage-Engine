@@ -23,16 +23,6 @@ type Price struct {
 	Timestamp time.Time
 }
 
-type Log struct {
-	Message  string
-	Timestamp time.Time
-}
-
-type Flag struct {
-	Message  string
-	Timestamp time.Time
-}
-
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -202,7 +192,7 @@ func Flag(message string) {
 
 	collection := session.DB(mgoDatabase).C("flags")
 
-	row := Flag{
+	row := utils.Flag{
 		Message:   message,
 		Timestamp: time.Now(),
 	}
@@ -213,14 +203,14 @@ func Flag(message string) {
 
 }
 
-func Get_flags() []Flag {
+func Get_flags() []utils.Flag {
 
 	session := mgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(mgoDatabase).C("flags")
 
-	var flags []Flag
+	var flags []utils.Flag
 
 	err := collection.Find(nil).All(&flags)
 	check(err)
@@ -249,7 +239,7 @@ func Log(message string) {
 
 	collection := session.DB(mgoDatabase).C("log")
 
-	row := Log{
+	row := utils.Log{
 		Message:   message,
 		Timestamp: time.Now(),
 	}
@@ -260,14 +250,14 @@ func Log(message string) {
 
 }
 
-func Get_logs() []Log {
+func Get_logs() []utils.Log {
 
 	session := mgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(mgoDatabase).C("log")
 
-	var logs []Log
+	var logs []utils.Log
 
 	err := collection.Find(nil).All(&logs)
 	check(err)

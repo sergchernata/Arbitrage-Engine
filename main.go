@@ -238,7 +238,7 @@ func resume_transactions(transactions []utils.Transaction) {
 			// for a less than profitable amount of tokens
 			// throw error and kill bot
 			// 4 is an arbitrary number for now, should be revisited
-			if quantity < trade_quantity[t.Token] + 4 {
+			if quantity < float64(trade_quantity[t.Token]+4) {
 				throw_flag()
 			}
 
@@ -405,9 +405,9 @@ func check_if_bought(row_id, token, buy_exchange, sell_exchange, buy_tx_id strin
 
 		exchange := strings.ToUpper(sell_exchange)
 		destination := props[exchange+"_ETH_ADDRESS"]
-		amount := trade_quantity[token]
+		amount := float64(trade_quantity[token])
 
-		reset(token, buy_exchange, destination, amount) {
+		reset(token, buy_exchange, destination, amount)
 		mongo.Buy_order_completed(row_id)
 
 	}
@@ -541,7 +541,7 @@ func reset(token, buy_exchange, destination string, amount float64) {
 
 }
 
-func check_flags(flags []Flag) {
+func check_flags(flags []utils.Flag) {
 
 	if len(flags) > 0 {
 		panic("Flag detected, bot execution stalled.")

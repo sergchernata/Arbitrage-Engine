@@ -34,6 +34,16 @@ type Transaction struct {
 	Timestamp     time.Time
 }
 
+type Log struct {
+	Message   string
+	Timestamp time.Time
+}
+
+type Flag struct {
+	Message   string
+	Timestamp time.Time
+}
+
 func main() {
 
 }
