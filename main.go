@@ -19,6 +19,10 @@ import (
 	// go get github.com/bwmarrin/discordgo
 	"github.com/bwmarrin/discordgo"
 
+	// package for running cron jobs
+	// go get github.com/jasonlvhit/gocron
+	"github.com/jasonlvhit/gocron"
+
 	// utility
 	"./utils"
 )
@@ -57,7 +61,6 @@ type Comparison struct {
 
 // discord bot
 var discord *discordgo.Session
-var botID string
 
 // threshold for writing a message to discord
 var discord_percent_threshold float64
@@ -87,11 +90,10 @@ func init() {
 					temp := strings.Split(pair, ":")
 					quantity, _ := strconv.Atoi(temp[1])
 
-					// tokens with trade quantity of 0 are to be ignored
-					if quantity > 0 {
-						tokens[temp[0]] = true
-						trade_quantity[temp[0]], _ = strconv.Atoi(temp[1])
-					}
+					// tokens with trade quantity of 0
+					// won't be traded, but will be tracked
+					tokens[temp[0]] = true
+					trade_quantity[temp[0]] = quantity
 				}
 
 			} else if strings.HasSuffix(split[0], "_FEE") {
@@ -116,6 +118,9 @@ func init() {
 	percent_threshold, err = strconv.ParseFloat(props["PERCENT_THRESHOLD"], 64)
 	utils.Check(err)
 
+	discord_percent_threshold, err = strconv.ParseFloat(props["DISCORD_PERCENT_THRESHOLD"], 64)
+	utils.Check(err)
+
 	// initialize database connection
 	mongo.Initialize(props["HOST"], props["DATABASE"], props["USERNAME"], props["PASSWORD"])
 
@@ -128,6 +133,14 @@ func init() {
 }
 
 func main() {
+
+	cron := gocron.NewScheduler()
+	cron.Every(1).Minutes().Do(run)
+	<-cron.Start()
+
+}
+
+func run() {
 
 	//-----------------------------------//
 	// check for flags that kill bot
@@ -424,6 +437,8 @@ func check_if_bought(row_id, token, buy_exchange, sell_exchange, buy_tx_id strin
 // if there is sufficient price gap, begins a transaction with sell()
 func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[string]bool) {
 
+	messages := make([]string, len(tokens)-len(exclude))
+
 	for token := range tokens {
 
 		if exclude[token] {
@@ -445,7 +460,7 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 		// calculte percentage difference
 		difference := (1 - comparison.Min_price/comparison.Max_price) * 100
 		difference = utils.ToFixed(difference, 0)
-		fmt.Println(comparison, "Difference:", difference, "%")
+		fmt.Println(token, comparison, "Difference:", difference, "%")
 		// check if difference is over the thershold
 		// if so, trigger the sell
 		if difference >= percent_threshold {
@@ -455,12 +470,14 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 		} else if difference >= discord_percent_threshold {
 
 			string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
-			message := token + " " + string_diff + "% difference between " + comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
-			discord_send(message)
-
+			message := token + " " + string_diff + "% difference between " +
+				comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
+			messages = append(messages, message)
 		}
 
 	}
+
+	discord_send(messages)
 
 }
 
@@ -569,27 +586,22 @@ func throw_flag() {
 
 }
 
-func discord_send(message string) {
+func discord_send(messages []string) {
 
-	if props["DISCORD_AUTH_TOKEN"] != "" {
-
-		discord_percent_threshold, _ = strconv.ParseFloat(props["DISCORD_PERCENT_THRESHOLD"], 64)
+	if len(messages) > 0 {
 
 		discord, err := discordgo.New("Bot " + props["DISCORD_AUTH_TOKEN"])
 		utils.Check(err)
 
-		user, err := discord.User("@me")
-		utils.Check(err)
-
-		botID = user.ID
-
 		discord.Open()
 
-		discord.ChannelMessageSend(props["DISCORD_CHANNEL_ID"], message)
+		for _, message := range messages {
+
+			discord.ChannelMessageSend(props["DISCORD_CHANNEL_ID"], message)
+
+		}
 
 		discord.Close()
-
-		return
 
 	}
 
