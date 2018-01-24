@@ -467,12 +467,16 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 
 			// place_sell_order(token, comparison.Max_exchange, comparison.Max_price)
 
-		} else if difference >= discord_percent_threshold {
+		}
+
+		// separate check for discord notifications
+		if difference >= discord_percent_threshold {
 
 			string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
 			message := token + " " + string_diff + "% difference between " +
 				comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
 			messages = append(messages, message)
+
 		}
 
 	}
