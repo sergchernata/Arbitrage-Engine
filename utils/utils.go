@@ -48,6 +48,12 @@ func main() {
 
 }
 
+func Check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 func Round(num float64) int {
 	return int(num + math.Copysign(0.5, num))
 }

@@ -15,6 +15,10 @@ import (
 	// database package
 	"./db/mongo"
 
+	// discord bot
+	// go get github.com/bwmarrin/discordgo
+	"github.com/bwmarrin/discordgo"
+
 	// utility
 	"./utils"
 )
@@ -51,11 +55,12 @@ type Comparison struct {
 	Max_exchange string
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
+// discord bot
+var discord *discordgo.Session
+var botID string
+
+// threshold for writing a message to discord
+var discord_percent_threshold float64
 
 func init() {
 
@@ -63,7 +68,7 @@ func init() {
 
 	// process environment variables
 	dat, err := ioutil.ReadFile(".env")
-	check(err)
+	utils.Check(err)
 
 	lines := strings.Split(string(dat), "\n")
 
@@ -94,7 +99,7 @@ func init() {
 				exchange := strings.Split(split[0], "_")[0]
 				exchange = strings.ToLower(exchange)
 				fee, err := strconv.ParseFloat(split[1], 64)
-				check(err)
+				utils.Check(err)
 
 				fees[exchange] = fee
 
@@ -109,7 +114,7 @@ func init() {
 	// initialize any secondary variables
 	// that need to be globablly available
 	percent_threshold, err = strconv.ParseFloat(props["PERCENT_THRESHOLD"], 64)
-	check(err)
+	utils.Check(err)
 
 	// initialize database connection
 	mongo.Initialize(props["HOST"], props["DATABASE"], props["USERNAME"], props["PASSWORD"])
@@ -444,7 +449,15 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 		// check if difference is over the thershold
 		// if so, trigger the sell
 		if difference >= percent_threshold {
+
 			// place_sell_order(token, comparison.Max_exchange, comparison.Max_price)
+
+		} else if difference >= discord_percent_threshold {
+
+			string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
+			message := token + " " + string_diff + "% difference between " + comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
+			discord_send(message)
+
 		}
 
 	}
@@ -553,5 +566,31 @@ func throw_flag() {
 
 	mongo.Flag("Buying less than profitable quantity.")
 	panic("Threw flag, killing bot.")
+
+}
+
+func discord_send(message string) {
+
+	if props["DISCORD_AUTH_TOKEN"] != "" {
+
+		discord_percent_threshold, _ = strconv.ParseFloat(props["DISCORD_PERCENT_THRESHOLD"], 64)
+
+		discord, err := discordgo.New("Bot " + props["DISCORD_AUTH_TOKEN"])
+		utils.Check(err)
+
+		user, err := discord.User("@me")
+		utils.Check(err)
+
+		botID = user.ID
+
+		discord.Open()
+
+		discord.ChannelMessageSend(props["DISCORD_CHANNEL_ID"], message)
+
+		discord.Close()
+
+		return
+
+	}
 
 }

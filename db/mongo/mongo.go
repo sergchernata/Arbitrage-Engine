@@ -23,19 +23,13 @@ type Price struct {
 	Timestamp time.Time
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func Initialize(host string, database string, username string, password string) {
 
 	session, err := mgo.Dial(host)
-	check(err)
+	utils.Check(err)
 
 	err = session.DB("admin").Login(username, password)
-	check(err)
+	utils.Check(err)
 
 	//defer session.Close()
 
@@ -78,7 +72,7 @@ func Sell_order_completed(row_id, sell_exchange string, amount float64) {
 	query := bson.M{"_id": row_id}
 	change := bson.M{"$set": bson.M{"status": utils.SellCompleted, "sell_cost": amount}}
 	err := collection.Update(query, change)
-	check(err)
+	utils.Check(err)
 
 }
 
@@ -92,7 +86,7 @@ func Transfer_started(row_id, tx_id string, buy_price float64) {
 	query := bson.M{"_id": row_id}
 	change := bson.M{"$set": bson.M{"status": utils.TransferStarted}}
 	err := collection.Update(query, change)
-	check(err)
+	utils.Check(err)
 
 }
 
@@ -106,7 +100,7 @@ func Transfer_completed(row_id string) {
 	query := bson.M{"_id": row_id}
 	change := bson.M{"$set": bson.M{"status": utils.TransferCompleted}}
 	err := collection.Update(query, change)
-	check(err)
+	utils.Check(err)
 
 }
 
@@ -120,7 +114,7 @@ func Buy_order_placed(row_id, tx_id string, quantity, buy_price float64) {
 	query := bson.M{"_id": row_id}
 	change := bson.M{"$set": bson.M{"status": utils.BuyPlaced, "buy_tx_id": tx_id, "buy_price": buy_price, "buy_quantity": quantity}}
 	err := collection.Update(query, change)
-	check(err)
+	utils.Check(err)
 
 }
 
@@ -134,7 +128,7 @@ func Buy_order_completed(row_id string) {
 	query := bson.M{"_id": row_id}
 	change := bson.M{"$set": bson.M{"status": utils.BuyCompleted}}
 	err := collection.Update(query, change)
-	check(err)
+	utils.Check(err)
 
 }
 
@@ -149,7 +143,7 @@ func Get_incomplete_transactions() []utils.Transaction {
 
 	query := bson.M{"status": bson.M{"$lt": utils.BuyCompleted}}
 	err := collection.Find(query).All(&transactions)
-	check(err)
+	utils.Check(err)
 
 	return transactions
 
@@ -213,7 +207,7 @@ func Get_flags() []utils.Flag {
 	var flags []utils.Flag
 
 	err := collection.Find(nil).All(&flags)
-	check(err)
+	utils.Check(err)
 
 	return flags
 
@@ -260,7 +254,7 @@ func Get_logs() []utils.Log {
 	var logs []utils.Log
 
 	err := collection.Find(nil).All(&logs)
-	check(err)
+	utils.Check(err)
 
 	return logs
 
