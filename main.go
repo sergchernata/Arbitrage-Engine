@@ -42,6 +42,9 @@ var tokens = make(map[string]bool)
 // ex: ["binance"]["REQ-ETH"] = 0.000412
 var exchange_prices = make(map[string]map[string]float64)
 
+// same story and structure as exchange_prices above
+var exchange_balances = make(map[string]map[string]float64)
+
 // each key is a token symbol, matching the array of tokens above
 // each value is the number of tokens to be sold at once per trade
 var trade_quantity = make(map[string]int)
@@ -140,9 +143,16 @@ func init() {
 
 func main() {
 
-	cron := gocron.NewScheduler()
-	cron.Every(10).Minutes().Do(run)
-	<-cron.Start()
+	// main arbitrage flow
+	arbitrage := gocron.NewScheduler()
+	arbitrage.Every(10).Minutes().Do(run)
+	<-arbitrage.Start()
+
+	// once a day update total balance
+	// and post summary to discord
+	daily := gocron.NewScheduler()
+	daily.Every(1).Day().At("20:00").Do(daily)
+	<-daily.Start()
 
 }
 
@@ -165,16 +175,16 @@ func run() {
 	//-----------------------------------//
 	// get balances from all exchanges
 	//-----------------------------------//
-	binance_balances := binance.Get_balances(tokens)
-	kucoin_balances := kucoin.Get_balances(tokens)
-	bitz_balances := bitz.Get_balances(tokens)
-	okex_balances := okex.Get_balances(tokens)
+	exchange_balances["binance"] = binance.Get_balances(tokens)
+	exchange_balances["kucoin"] = kucoin.Get_balances(tokens)
+	// exchange_balances["bitz"] := bitz.Get_balances(tokens) api under maintenance
+	exchange_balances["okex"] = okex.Get_balances(tokens)
 
 	//-----------------------------------//
 	// exclude tokens that have available balance
 	// on only 1 exchange, need 2 min for arbitrage
 	//-----------------------------------//
-	exclude := exclude_tokens(binance_balances, kucoin_balances, bitz_balances, okex_balances)
+	exclude := exclude_tokens(exchange_balances)
 
 	//-----------------------------------//
 	// start new transactions
@@ -193,22 +203,31 @@ func run() {
 
 }
 
-func exclude_tokens(binance, kucoin, bitz, okex map[string]float64) map[string]bool {
+func exclude_tokens(exchange_balances map[string]map[string]float64) map[string]bool {
 
+	var num = len(exchange_balances)
 	var exclude = make(map[string]bool)
+	var count = make(map[string]bool)
 
-	for token := range tokens {
+	for exchange, tokens := range exchange_balances {
 
-		quant := float64(trade_quantity[token])
+		for token := range tokens {
 
-		binance_sufficient := utils.Ternary(1, 0, binance[token] >= quant)
-		kucoin_sufficient := utils.Ternary(1, 0, kucoin[token] >= quant)
-		bitz_sufficient := utils.Ternary(1, 0, bitz[token] >= quant)
-		okex_sufficient := utils.Ternary(1, 0, okex[token] >= quant)
-		sufficient_balance := binance_sufficient + kucoin_sufficient + bitz_sufficient + okex_sufficient
+			quant := float64(trade_quantity[token])
 
-		if sufficient_balance < 2 {
-			exclude[token] = true
+			// here we're adding +1 for every exchange with available balance
+			// this way we can count exchanges and make sure we have at least 2
+			// since arbitrage only works with 2+ exchanges
+			binance_sufficient := utils.Ternary(1, 0, binance[token] >= quant)
+			kucoin_sufficient := utils.Ternary(1, 0, kucoin[token] >= quant)
+			bitz_sufficient := utils.Ternary(1, 0, bitz[token] >= quant)
+			okex_sufficient := utils.Ternary(1, 0, okex[token] >= quant)
+			sufficient_balance := binance_sufficient + kucoin_sufficient + bitz_sufficient + okex_sufficient
+
+			if sufficient_balance < 2 {
+				exclude[token] = true
+			}
+
 		}
 
 	}
@@ -602,6 +621,17 @@ func throw_flag() {
 
 	mongo.Flag("Buying less than profitable quantity.")
 	panic("Threw flag, killing bot.")
+
+}
+
+func daily() {
+
+	// update total balance
+
+	// save daily balance, for time scale tracking
+
+	// send daily summary to discord
+
 
 }
 
