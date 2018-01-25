@@ -36,6 +36,12 @@ var props = make(map[string]string)
 // each key is a token symbol, ie REQ, LINK, etc
 var tokens = make(map[string]bool)
 
+// started with holding exchange prices in individual variables
+// but as we add more exchanges it becomes a hassle to pass around
+// all those variables, so let's hold them in one map
+// ex: ["binance"]["REQ-ETH"] = 0.000412
+var exchange_prices = make(map[string]map[string]float64)
+
 // each key is a token symbol, matching the array of tokens above
 // each value is the number of tokens to be sold at once per trade
 var trade_quantity = make(map[string]int)
@@ -151,10 +157,10 @@ func run() {
 	//-----------------------------------//
 	// get prices from all exchanges
 	//-----------------------------------//
-	binance_prices := binance.Get_price(tokens)
-	kucoin_prices := kucoin.Get_price(tokens)
-	bitz_prices := bitz.Get_price(tokens)
-	okex_prices := okex.Get_price(tokens)
+	exchange_prices["binance"] = binance.Get_price(tokens)
+	exchange_prices["kucoin"] = kucoin.Get_price(tokens)
+	//exchange_prices["bitz"] = bitz.Get_price(tokens) api under maintenance
+	exchange_prices["okex"] = okex.Get_price(tokens)
 
 	//-----------------------------------//
 	// get balances from all exchanges
@@ -173,7 +179,7 @@ func run() {
 	//-----------------------------------//
 	// start new transactions
 	//-----------------------------------//
-	compare_prices(binance_prices, kucoin_prices, bitz_prices, okex_prices, exclude)
+	compare_prices(exchange_prices, exclude)
 
 	//-----------------------------------//
 	// get incomplete transactions
@@ -183,10 +189,7 @@ func run() {
 	//-----------------------------------//
 	// save prices from all exchanges
 	//-----------------------------------//
-	mongo.Save_prices(binance_prices, "binance")
-	mongo.Save_prices(kucoin_prices, "kucoin")
-	mongo.Save_prices(bitz_prices, "bitz")
-	mongo.Save_prices(okex_prices, "okex")
+	mongo.Save_prices(exchange_prices)
 
 }
 
@@ -329,7 +332,6 @@ func start_transfer(row_id, token, sell_exchange, destination string, amount, bu
 	}
 
 	if started {
-		fmt.Println(tx_id)
 		mongo.Transfer_started(row_id, tx_id, buy_price)
 	}
 
@@ -390,7 +392,6 @@ func place_buy_order(row_id, token, buy_exchange string, buy_price, quantity flo
 	}
 
 	if placed {
-		fmt.Println(tx_id)
 		mongo.Buy_order_placed(row_id, tx_id, quantity, buy_price)
 	}
 
@@ -435,7 +436,7 @@ func check_if_bought(row_id, token, buy_exchange, sell_exchange, buy_tx_id strin
 // starting point, loops over all tokens
 // uses find_min_max_exchanges() on each token
 // if there is sufficient price gap, begins a transaction with sell()
-func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[string]bool) {
+func compare_prices(exchange_prices map[string]map[string]float64, exclude map[string]bool) {
 
 	messages := make([]string, len(tokens)-len(exclude))
 
@@ -445,14 +446,7 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 			continue
 		}
 
-		pair := token + "-ETH"
-
-		prices := map[string]float64{
-			"binance": binance[pair],
-			"kucoin":  kucoin[pair],
-			// "bitz":    bitz[pair], their api is being reworked
-			"okex": okex[pair],
-		}
+		prices := filter_prices(token, exchange_prices)
 
 		comparison := find_min_max_exchanges(prices)
 		comparisons[token] = comparison
@@ -473,8 +467,8 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 		if difference >= discord_percent_threshold {
 
 			string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
-			message := token + " " + string_diff + "% difference between " +
-				comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
+			message := token + " " + string_diff + "% difference between "
+			message += comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
 			messages = append(messages, message)
 
 		}
@@ -482,6 +476,27 @@ func compare_prices(binance, kucoin, bitz, okex map[string]float64, exclude map[
 	}
 
 	discord_send(messages)
+
+}
+
+// because not all tokens are available on all exchanges
+// when we prepare token prices for comparison
+// we need to make sure that we have an actual price, more than 0
+func filter_prices(token string, exchange_prices map[string]map[string]float64) map[string]float64 {
+
+	prices := make(map[string]float64)
+
+	pair := token + "-ETH"
+
+	for exchange, tokens := range exchange_prices {
+
+		if tokens[pair] > 0 {
+			prices[exchange] = tokens[pair]
+		}
+
+	}
+
+	return prices
 
 }
 
@@ -598,14 +613,13 @@ func discord_send(messages []string) {
 		utils.Check(err)
 
 		discord.Open()
+		defer discord.Close()
 
 		for _, message := range messages {
 
 			discord.ChannelMessageSend(props["DISCORD_CHANNEL_ID"], message)
 
 		}
-
-		discord.Close()
 
 	}
 
