@@ -1,7 +1,7 @@
 package mongo
 
 import (
-	//"fmt"
+	// "fmt"
 	// go get gopkg.in/mgo.v2
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -149,27 +149,37 @@ func Get_incomplete_transactions() []utils.Transaction {
 
 }
 
-func Save_prices(tokens map[string]float64, exchange string) {
+func Save_prices(exchange_prices map[string]map[string]float64) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(mgoDatabase).C("prices")
+	bulk := collection.Bulk()
 
-	for token, price := range tokens {
+	var rows []interface{}
 
-		row := Price{
-			Token:     token,
-			Price:     price,
-			Exchange:  exchange,
-			Timestamp: time.Now(),
-		}
+	for exchange, prices := range exchange_prices {
 
-		if err := collection.Insert(row); err != nil {
-			panic(err)
+		for token, value := range prices {
+
+			row := Price{
+				Token:     token,
+				Price:     value,
+				Exchange:  exchange,
+				Timestamp: time.Now(),
+			}
+
+			rows = append(rows, row)
+
 		}
 
 	}
+
+	bulk.Insert(rows...)
+
+	_, err := bulk.Run()
+	utils.Check(err)
 
 }
 
