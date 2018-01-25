@@ -141,7 +141,7 @@ func init() {
 func main() {
 
 	cron := gocron.NewScheduler()
-	cron.Every(1).Minutes().Do(run)
+	cron.Every(10).Minutes().Do(run)
 	<-cron.Start()
 
 }
