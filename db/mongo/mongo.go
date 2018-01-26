@@ -183,6 +183,74 @@ func Save_prices(exchange_prices map[string]map[string]float64) {
 
 }
 
+func Save_balances(exchange_balances map[string]map[string]float64) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("balances")
+	bulk := collection.Bulk()
+
+	var rows []interface{}
+
+	for exchange, tokens := range exchange_balances {
+
+		for token, amount := range tokens {
+
+			row := utils.Balance{
+				Token:     token,
+				Amount:    amount,
+				Exchange:  exchange,
+				Timestamp: time.Now(),
+			}
+
+			rows = append(rows, row)
+
+		}
+
+	}
+
+	bulk.Insert(rows...)
+
+	_, err := bulk.Run()
+	utils.Check(err)
+
+}
+
+func Get_balances(from_date, to_date time.Time) []utils.Balance {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("balances")
+
+	var balances []utils.Balance
+
+	query := bson.M{"timestamp": bson.M{"$gt": from_date, "$lt": to_date}}
+	err := collection.Find(query).All(&balances)
+	utils.Check(err)
+
+	return balances
+
+}
+
+func Get_transactions(from_date, to_date time.Time) []utils.Transaction {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("balances")
+
+	var transactions []utils.Transaction
+
+	query := bson.M{"timestamp": bson.M{"$gt": from_date, "$lt": to_date}}
+	err := collection.Find(query).All(&transactions)
+	utils.Check(err)
+
+	return transactions
+
+}
+
 //-----------------------------------//
 // flag methods
 //
