@@ -145,7 +145,7 @@ func main() {
 
 	// main arbitrage flow
 	arbitrage := gocron.NewScheduler()
-	arbitrage.Every(10).Minutes().Do(run)
+	arbitrage.Every(1).Minutes().Do(run)
 	<-arbitrage.Start()
 
 	// once a day update total balance
@@ -205,31 +205,29 @@ func run() {
 
 func exclude_tokens(exchange_balances map[string]map[string]float64) map[string]bool {
 
-	var num = len(exchange_balances)
 	var exclude = make(map[string]bool)
-	var count = make(map[string]bool)
+	var count = make(map[string]int)
 
-	for exchange, tokens := range exchange_balances {
+	for _, tokens := range exchange_balances {
+		for token, balance := range tokens {
 
-		for token := range tokens {
-
-			quant := float64(trade_quantity[token])
+			trade_amount := float64(trade_quantity[token])
 
 			// here we're adding +1 for every exchange with available balance
 			// this way we can count exchanges and make sure we have at least 2
 			// since arbitrage only works with 2+ exchanges
-			binance_sufficient := utils.Ternary(1, 0, binance[token] >= quant)
-			kucoin_sufficient := utils.Ternary(1, 0, kucoin[token] >= quant)
-			bitz_sufficient := utils.Ternary(1, 0, bitz[token] >= quant)
-			okex_sufficient := utils.Ternary(1, 0, okex[token] >= quant)
-			sufficient_balance := binance_sufficient + kucoin_sufficient + bitz_sufficient + okex_sufficient
-
-			if sufficient_balance < 2 {
-				exclude[token] = true
+			if trade_amount > 0 && balance >= trade_amount {
+				count[token]++
+			} else {
+				count[token] = 0
 			}
-
 		}
+	}
 
+	for token, score := range count {
+		if score < 2 {
+			exclude[token] = true
+		}
 	}
 
 	return exclude
@@ -631,7 +629,6 @@ func daily() {
 	// save daily balance, for time scale tracking
 
 	// send daily summary to discord
-
 
 }
 
