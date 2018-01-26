@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"strconv"
 	"strings"
+	"time"
 
 	// individual exchange packages
 	"./exchanges/binance"
@@ -145,7 +146,7 @@ func main() {
 
 	// main arbitrage flow
 	arbitrage := gocron.NewScheduler()
-	arbitrage.Every(1).Minutes().Do(run)
+	arbitrage.Every(10).Minutes().Do(run)
 	<-arbitrage.Start()
 
 	// once a day update total balance
@@ -624,11 +625,43 @@ func throw_flag() {
 
 func daily() {
 
-	// update total balance
-
+	var messages []string
 	// save daily balance, for time scale tracking
+	mongo.Save_balances(exchange_balances)
+
+	// calculations and comparison of today vs previous day
+	from_date := time.Now().AddDate(0, 0, -2)
+	to_date := time.Now()
+	prev_day_balances := mongo.Get_balances(from_date, to_date)
+	from_date = time.Now().AddDate(0, 0, -1)
+	to_date = time.Now()
+	todays_transactions := mongo.Get_transactions(from_date, to_date)
+
+	// composit the messages of daily summary
+	messages = append(messages, "------------------------start")
+	messages = append(messages, "DAILY SUMMARY")
+	messages = append(messages, "-----------------------------")
+
+	for _, b := range prev_day_balances {
+
+		messages = append(messages, b.Exchange+"... coming soon ")
+
+	}
+
+	messages = append(messages, "-----------------------trades")
+
+	for _, t := range todays_transactions {
+
+		sell_quantity := fmt.Sprintf("%.2f", t.Sell_quantity)
+		buy_quantity := fmt.Sprintf("%.2f", t.Buy_quantity)
+		messages = append(messages, t.Token+" - sold: "+sell_quantity+", bought: "+buy_quantity)
+
+	}
+
+	messages = append(messages, "--------------------------end")
 
 	// send daily summary to discord
+	discord_send(messages)
 
 }
 

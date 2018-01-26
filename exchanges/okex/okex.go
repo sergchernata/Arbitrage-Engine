@@ -136,10 +136,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		body = execute("GET", api_url, endpoint, params)
 
 		err := json.Unmarshal(body, &data)
-		//check(err)
-		if err != nil {
-			continue
-		}
+		check(err)
 
 		price, err := strconv.ParseFloat(data.Data.Last, 64)
 		check(err)
