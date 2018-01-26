@@ -44,6 +44,14 @@ type Flag struct {
 	Timestamp time.Time
 }
 
+type Balance struct {
+	ID        bson.ObjectId `bson:"_id,omitempty"`
+	Token     string
+	Amount    float64
+	Exchange  string
+	Timestamp time.Time
+}
+
 func main() {
 
 }
