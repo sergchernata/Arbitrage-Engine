@@ -114,7 +114,9 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 		err := json.Unmarshal(body, &data)
 		check(err)
 
-		holdings[data.Holding.Symbol] = data.Holding.Amount
+		if data.Success {
+			holdings[data.Holding.Symbol] = data.Holding.Amount
+		}
 
 	}
 
