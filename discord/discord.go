@@ -5,8 +5,10 @@ import (
 	// go get github.com/bwmarrin/discordgo
 	"github.com/bwmarrin/discordgo"
 
+	"strings"
+
 	// utility
-	"./utils"
+	"../utils"
 )
 
 var auth_token, bot_id, channel_id string
@@ -29,7 +31,7 @@ func Initialize(discord_auth_token, discord_bot_id, discord_channel_id string) {
 	err = session.Open()
 	utils.Check(err)
 
-	defer session.Close()
+	// defer session.Close()
 
 	<-make(chan struct{})
 	return
@@ -37,7 +39,14 @@ func Initialize(discord_auth_token, discord_bot_id, discord_channel_id string) {
 }
 
 func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	fmt.Println(m.Content)
+
+	//var messages []string
+	content := strings.Replace(m.Content, " ", "", -1)
+
+	if content == "help" {
+		s.ChannelMessageSend(m.ChannelID, "helping you")
+	}
+
 }
 
 func Send_messages(messages []string) {
@@ -46,7 +55,7 @@ func Send_messages(messages []string) {
 
 		for _, message := range messages {
 
-			discord.ChannelMessageSend(channel_id, message)
+			session.ChannelMessageSend(channel_id, message)
 
 		}
 
