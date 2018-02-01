@@ -14,7 +14,7 @@ import (
 	"../utils"
 )
 
-var auth_token, bot_id, channel_id string
+var auth_token, bot_id, channel_id, host, database, username, password string
 
 var session *discordgo.Session
 
@@ -56,10 +56,44 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	author_id := m.Author.ID
 	author_username := m.Author.Username
 	author_channel_id := m.ChannelID
-	content := strings.Replace(m.Content, " ", "", -1)
+
+	// don't talk to itself
+	if author_id == bot_id {
+		return
+	}
+
+	// trim spaces and lowercase
+	content := strings.ToLower(strings.Trim(m.Content, " "))
+
+	mongo.Check_discord_user_exists(author_id, author_username, author_channel_id)
 
 	if content == "help" {
-		s.ChannelMessageSend(author_channel_id, "helping you")
+
+		message := "Alright ~~dipshit~~ " + author_username + ", here's a list of available commands. Some contain a small example at the end.\n"
+		message += "Don't type multiple commands per message; one at a time.\n\n"
+		message += "```ini\n"
+		message += "[on]      Turn on the bot\n"
+		message += "[off]     Turn off the bot\n"
+		message += "\n"
+		message += "[add]     Add token to be monitored, ex: 'add OMG'\n"
+		message += "[remove]  Remove token from monitoring, ex: 'remove OMG'\n"
+		message += "[show]    Show a list of tokens that are being monitored\n"
+		message += "\n"
+		message += "[set]     Threshold for notifications in percent, ex: 'set 5'\n"
+		message += "```"
+
+		messages = append(messages, message)
+
+	} else {
+
+		messages = append(messages, "use `help` for a list of available commands")
+
+	}
+
+	for _, message := range messages {
+
+		s.ChannelMessageSend(author_channel_id, message)
+
 	}
 
 }
