@@ -347,3 +347,7 @@ func Empty_log() {
 	collection.RemoveAll(nil)
 
 }
+
+func Check_discord_user_exists(author_id, author_username, author_channel_id string) {
+
+}
