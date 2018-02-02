@@ -103,7 +103,9 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &data)
-	check(err)
+	if err != nil {
+		return holdings
+	}
 
 	// remove tokens that we don't care about
 	for token, amount := range data.Info.Funds.Free.(map[string]interface{}) {
@@ -136,7 +138,9 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		body = execute("GET", api_url, endpoint, params)
 
 		err := json.Unmarshal(body, &data)
-		check(err)
+		if err != nil {
+			return prices
+		}
 
 		price, err := strconv.ParseFloat(data.Data.Last, 64)
 		check(err)

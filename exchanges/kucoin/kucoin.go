@@ -112,7 +112,9 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 		body = execute("GET", api_url, endpoint, params, true)
 
 		err := json.Unmarshal(body, &data)
-		check(err)
+		if err != nil {
+			return holdings
+		}
 
 		if data.Success {
 			holdings[data.Holding.Symbol] = data.Holding.Amount
@@ -135,7 +137,9 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	body = execute("GET", api_url, endpoint, params, false)
 
 	err := json.Unmarshal(body, &data)
-	check(err)
+	if err != nil {
+		return prices
+	}
 
 	//parse data and format for return
 	for _, v := range data.Prices {
