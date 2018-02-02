@@ -348,6 +348,9 @@ func Empty_log() {
 
 }
 
+//-----------------------------------//
+// discord-specific methods
+//-----------------------------------//
 func Get_discorder(user_id string) utils.Discorder {
 
 	session := mgoSession.Clone()
@@ -374,4 +377,61 @@ func Create_discorder(discorder utils.Discorder) {
 	if err := collection.Insert(discorder); err != nil {
 		panic(err)
 	}
+}
+
+func Discorder_toggle(author_id string, toggle bool) bool {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	query := bson.M{"id": author_id}
+	change := bson.M{"$set": bson.M{"on": toggle}}
+	err := collection.Update(query, change)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+
+}
+
+func Discorder_update_tokens(author_id, action, token string) bool {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	query := bson.M{"id": author_id}
+	change := bson.M{action: bson.M{"tokens": token}}
+	err := collection.Update(query, change)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+
+}
+
+func Discorder_set_threshold(author_id string, threshold float64) bool {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	query := bson.M{"id": author_id}
+	change := bson.M{"$set": bson.M{"threshold": threshold}}
+	err := collection.Update(query, change)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+
 }
