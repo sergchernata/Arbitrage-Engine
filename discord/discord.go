@@ -2,6 +2,7 @@ package discord
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -85,68 +86,74 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// trim spaces and lowercase
-	content := strings.ToLower(strings.Trim(m.Content, " "))
+	content := strings.Trim(m.Content, " ")
 
 	if content == "on" {
 
-		done := false
+		done := mongo.Discorder_toggle(author_id, true)
 
 		if done {
-			message = "Ok, I'll monitor the prices for you"
+			message = "Ok, I'll monitor the prices for you."
 		} else {
 			message = errors["db_error"]
 		}
 
 	} else if content == "off" {
 
-		done := false
+		done := mongo.Discorder_toggle(author_id, false)
 
 		if done {
-			message = "I will no longer monitor the prices for you"
+			message = "I will no longer monitor the prices for you."
 		} else {
 			message = errors["db_error"]
 		}
 
 	} else if strings.HasPrefix(content, "add ") {
 
-		done := false
-		token := ""
+		token := strings.ToUpper(strings.Split(content, " ")[1])
+		done := mongo.Discorder_update_tokens(author_id, "$push", token)
 
 		if done {
-			message = "Ok, I'll monitor " + token + " as well"
+			message = "Ok, I'll monitor " + token + " as well."
 		} else {
 			message = errors["db_error"]
 		}
 
 	} else if strings.HasPrefix(content, "remove ") {
 
-		done := false
-		token := ""
+		token := strings.Split(content, " ")[1]
+		done := mongo.Discorder_update_tokens(author_id, "$pull", token)
 
 		if done {
-			message = "Ok, I will no longer monitor " + token
+			message = "Ok, I will no longer monitor " + token + "."
 		} else {
 			message = errors["db_error"]
 		}
 
 	} else if content == "show" {
 
-		done := false
-
-		if done {
-			message = ""
+		if len(discorder.Tokens) > 0 {
+			threshold := strconv.FormatFloat(discorder.Threshold, 'f', 2, 64)
+			message = "You asked me to monitor " + strings.Join(discorder.Tokens, ", ") + " up to a threshold of " + threshold
 		} else {
-			message = errors["db_error"]
+			message = "You haven't asked me to monitor any tokens yet."
 		}
 
 	} else if strings.HasPrefix(content, "set ") {
 
-		done := false
+		t := strings.Split(content, " ")[1]
+		threshold, err := strconv.ParseFloat(t, 64)
 
-		if done {
-			message = ""
+		if err == nil {
+			done := mongo.Discorder_set_threshold(author_id, threshold)
+
+			if done {
+				message = "Ok, I changed the notification threshold to " + t
+			} else {
+				message = errors["db_error"]
+			}
 		} else {
-			message = errors["db_error"]
+			message = "Threshold must be a number, decimal or integer."
 		}
 
 	} else if content == "help" {
