@@ -348,6 +348,30 @@ func Empty_log() {
 
 }
 
-func Check_discord_user_exists(author_id, author_username, author_channel_id string) {
+func Get_discorder(user_id string) utils.Discorder {
 
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	var discroder utils.Discorder
+
+	query := bson.M{"id": user_id}
+	collection.Find(query).One(&discroder)
+
+	return discroder
+
+}
+
+func Create_discorder(discorder utils.Discorder) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	if err := collection.Insert(discorder); err != nil {
+		panic(err)
+	}
 }

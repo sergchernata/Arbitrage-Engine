@@ -3,6 +3,7 @@ package discord
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	// go get github.com/bwmarrin/discordgo
 	"github.com/bwmarrin/discordgo"
@@ -17,6 +18,11 @@ import (
 var auth_token, bot_id, channel_id, host, database, username, password string
 
 var session *discordgo.Session
+
+var errors = map[string]string{
+
+	"db_error": "I failed to connect to database, I am ashamed",
+}
 
 func Initialize(discord_auth_token, discord_bot_id, discord_channel_id,
 	mongo_host, mongo_database, mongo_username, mongo_password string) {
@@ -60,15 +66,93 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	// check if this user is already within database
+	discorder := mongo.Get_discorder(author_id)
+
+	if discorder.ID == "" {
+
+		discorder := utils.Discorder{
+			ID:        author_id,
+			Username:  author_username,
+			Channel:   author_channel_id,
+			On:        false,
+			Threshold: 5,
+			Timestamp: time.Now(),
+		}
+
+		// if not, create him
+		mongo.Create_discorder(discorder)
+	}
+
 	// trim spaces and lowercase
 	content := strings.ToLower(strings.Trim(m.Content, " "))
 
-	mongo.Check_discord_user_exists(author_id, author_username, author_channel_id)
+	if content == "on" {
 
-	if content == "help" {
+		done := false
+
+		if done {
+			message = "Ok, I'll monitor the prices for you"
+		} else {
+			message = errors["db_error"]
+		}
+
+	} else if content == "off" {
+
+		done := false
+
+		if done {
+			message = "I will no longer monitor the prices for you"
+		} else {
+			message = errors["db_error"]
+		}
+
+	} else if strings.HasPrefix(content, "add ") {
+
+		done := false
+		token := ""
+
+		if done {
+			message = "Ok, I'll monitor " + token + " as well"
+		} else {
+			message = errors["db_error"]
+		}
+
+	} else if strings.HasPrefix(content, "remove ") {
+
+		done := false
+		token := ""
+
+		if done {
+			message = "Ok, I will no longer monitor " + token
+		} else {
+			message = errors["db_error"]
+		}
+
+	} else if content == "show" {
+
+		done := false
+
+		if done {
+			message = ""
+		} else {
+			message = errors["db_error"]
+		}
+
+	} else if strings.HasPrefix(content, "set ") {
+
+		done := false
+
+		if done {
+			message = ""
+		} else {
+			message = errors["db_error"]
+		}
+
+	} else if content == "help" {
 
 		message = "Alright ~~dipshit~~ " + author_username + ", here's a list of available commands. Some contain a small example at the end.\n"
-		message += "Don't type multiple commands per message; one at a time.\n\n"
+		message += "Don't type multiple commands per message; send one at a time.\n\n"
 		message += "```ini\n"
 		message += "[on]      Turn on the bot\n"
 		message += "[off]     Turn off the bot\n"
@@ -90,7 +174,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	} else {
 
-		message = "Use `help` for a list of available commands"
+		message = "Say `help` for a list of available commands"
 
 	}
 

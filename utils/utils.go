@@ -52,6 +52,16 @@ type Balance struct {
 	Timestamp time.Time
 }
 
+type Discorder struct {
+	ID        string
+	Username  string
+	Channel   string
+	On        bool
+	Tokens    []string
+	Threshold int
+	Timestamp time.Time
+}
+
 func main() {
 
 }
