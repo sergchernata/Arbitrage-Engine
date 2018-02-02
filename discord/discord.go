@@ -84,6 +84,10 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		message = "Please don't talk about my master"
 
+	} else if is_potty_mouth(content) {
+
+		message = "There's no need for that kind of language"
+
 	} else {
 
 		message = "Use `help` for a list of available commands"
@@ -105,5 +109,19 @@ func Send_messages(messages []string) {
 		}
 
 	}
+
+}
+
+func is_potty_mouth(message string) bool {
+
+	bad_words := []string{"fuck", "shit", "dick", "bitch", "cunt"}
+
+	for _, word := range bad_words {
+		if strings.Contains(message, word) {
+			return true
+		}
+	}
+
+	return false
 
 }
