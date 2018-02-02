@@ -58,7 +58,7 @@ type Discorder struct {
 	Channel   string
 	On        bool
 	Tokens    []string
-	Threshold int
+	Threshold float64
 	Timestamp time.Time
 }
 
