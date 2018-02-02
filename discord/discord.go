@@ -30,12 +30,13 @@ func Initialize(discord_auth_token, discord_bot_id, discord_channel_id,
 	database = mongo_database
 	username = mongo_username
 	password = mongo_password
+	var err error
 
 	// initialize database connection
 	mongo.Initialize(host, database, username, password)
 
 	// initialize discord bot
-	session, err := discordgo.New("Bot " + auth_token)
+	session, err = discordgo.New("Bot " + auth_token)
 	utils.Check(err)
 
 	session.AddHandler(message_handler)
@@ -45,14 +46,11 @@ func Initialize(discord_auth_token, discord_bot_id, discord_channel_id,
 
 	// defer session.Close()
 
-	<-make(chan struct{})
-	return
-
 }
 
 func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
-	var messages []string
+	message := ""
 	author_id := m.Author.ID
 	author_username := m.Author.Username
 	author_channel_id := m.ChannelID
@@ -69,7 +67,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if content == "help" {
 
-		message := "Alright ~~dipshit~~ " + author_username + ", here's a list of available commands. Some contain a small example at the end.\n"
+		message = "Alright ~~dipshit~~ " + author_username + ", here's a list of available commands. Some contain a small example at the end.\n"
 		message += "Don't type multiple commands per message; one at a time.\n\n"
 		message += "```ini\n"
 		message += "[on]      Turn on the bot\n"
@@ -82,19 +80,17 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message += "[set]     Threshold for notifications in percent, ex: 'set 5'\n"
 		message += "```"
 
-		messages = append(messages, message)
+	} else if strings.Contains(content, "serg") {
+
+		message = "Please don't talk about my master"
 
 	} else {
 
-		messages = append(messages, "use `help` for a list of available commands")
+		message = "Use `help` for a list of available commands"
 
 	}
 
-	for _, message := range messages {
-
-		s.ChannelMessageSend(author_channel_id, message)
-
-	}
+	s.ChannelMessageSend(author_channel_id, message)
 
 }
 
