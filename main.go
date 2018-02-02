@@ -17,8 +17,7 @@ import (
 	"./db/mongo"
 
 	// discord bot
-	// go get github.com/bwmarrin/discordgo
-	"github.com/bwmarrin/discordgo"
+	"./discord"
 
 	// package for running cron jobs
 	// go get github.com/jasonlvhit/gocron
@@ -68,9 +67,6 @@ type Comparison struct {
 	Min_exchange string
 	Max_exchange string
 }
-
-// discord bot
-var discord *discordgo.Session
 
 // threshold for writing a message to discord
 var discord_percent_threshold float64
@@ -140,13 +136,17 @@ func init() {
 	bitz.Initialize(props["BITZ_URL"], props["BITZ_KEY"], props["BITZ_SECRET"], props["BITZ_TRADEPW"], props["BITZ_ETH_FEE"])
 	okex.Initialize(props["OKEX_URL"], props["OKEX_KEY"], props["OKEX_SECRET"], props["OKEX_TRADEPW"], props["OKEX_ETH_FEE"])
 
+	// initialize discord bot
+	discord.Initialize(props["DISCORD_AUTH_TOKEN"], props["DISCORD_BOT_ID"], props["DISCORD_CHANNEL_ID"],
+		props["HOST"], props["DATABASE"], props["USERNAME"], props["PASSWORD"])
+
 }
 
 func main() {
 
 	// main arbitrage flow
 	arbitrage := gocron.NewScheduler()
-	arbitrage.Every(10).Minutes().Do(run)
+	arbitrage.Every(1).Minutes().Do(run)
 	<-arbitrage.Start()
 
 	// once a day update total balance
@@ -247,8 +247,8 @@ func resume_transactions(transactions []utils.Transaction) {
 			check_if_sold(t.ID.Hex(), t.Token, t.Sell_exchange, t.Sell_tx_id)
 
 		case utils.SellCompleted:
-			exchange := strings.ToUpper(comparisons[t.Token].Min_exchange)
-			destination := props[exchange+"_ETH_ADDRESS"]
+			buy_exchange := comparisons[t.Token].Min_exchange
+			destination := props[strings.ToUpper(buy_exchange)+"_ETH_ADDRESS"]
 			buy_price := comparisons[t.Token].Min_price
 
 			// time has passed since the sale was first placed
@@ -263,7 +263,7 @@ func resume_transactions(transactions []utils.Transaction) {
 			// check if difference is over the thershold
 			// if so, trigger the sell
 			if difference >= percent_threshold {
-				start_transfer(t.ID.Hex(), "ETH", t.Sell_exchange, destination, t.Sell_cost, buy_price)
+				start_transfer(t.ID.Hex(), "ETH", t.Sell_exchange, buy_exchange, destination, t.Sell_cost, buy_price)
 			}
 
 		case utils.TransferStarted:
@@ -325,7 +325,7 @@ func check_if_sold(row_id, token, sell_exchange, sell_tx_id string) {
 
 }
 
-func start_transfer(row_id, token, sell_exchange, destination string, amount, buy_price float64) {
+func start_transfer(row_id, token, sell_exchange, buy_exchange, destination string, amount, buy_price float64) {
 
 	tx_id := ""
 	started := false
@@ -350,7 +350,7 @@ func start_transfer(row_id, token, sell_exchange, destination string, amount, bu
 	}
 
 	if started {
-		mongo.Transfer_started(row_id, tx_id, buy_price)
+		mongo.Transfer_started(row_id, tx_id, buy_exchange, buy_price)
 	}
 
 }
@@ -477,7 +477,7 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 		// if so, trigger the sell
 		if difference >= percent_threshold {
 
-			// place_sell_order(token, comparison.Max_exchange, comparison.Max_price)
+			place_sell_order(token, comparison.Max_exchange, comparison.Max_price)
 
 		}
 
@@ -493,7 +493,7 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 
 	}
 
-	discord_send(messages)
+	discord.Send_messages(messages)
 
 }
 
@@ -661,26 +661,6 @@ func daily() {
 	messages = append(messages, "--------------------------end")
 
 	// send daily summary to discord
-	discord_send(messages)
-
-}
-
-func discord_send(messages []string) {
-
-	if len(messages) > 0 {
-
-		discord, err := discordgo.New("Bot " + props["DISCORD_AUTH_TOKEN"])
-		utils.Check(err)
-
-		discord.Open()
-		defer discord.Close()
-
-		for _, message := range messages {
-
-			discord.ChannelMessageSend(props["DISCORD_CHANNEL_ID"], message)
-
-		}
-
-	}
+	discord.Send_messages(messages)
 
 }
