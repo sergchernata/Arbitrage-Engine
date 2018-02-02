@@ -76,7 +76,7 @@ func Sell_order_completed(row_id, sell_exchange string, amount float64) {
 
 }
 
-func Transfer_started(row_id, tx_id string, buy_price float64) {
+func Transfer_started(row_id, tx_id, buy_exchange string, buy_price float64) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
@@ -84,7 +84,7 @@ func Transfer_started(row_id, tx_id string, buy_price float64) {
 	collection := session.DB(mgoDatabase).C("transactions")
 
 	query := bson.M{"_id": bson.ObjectIdHex(row_id)}
-	change := bson.M{"$set": bson.M{"status": utils.TransferStarted}}
+	change := bson.M{"$set": bson.M{"status": utils.TransferStarted, "buy_exchange": buy_exchange}}
 	err := collection.Update(query, change)
 	utils.Check(err)
 
