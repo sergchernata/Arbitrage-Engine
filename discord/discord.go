@@ -58,6 +58,7 @@ func Initialize(discord_auth_token, discord_bot_id, discord_channel_id,
 func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	message := ""
+	new_user := false
 	author_id := m.Author.ID
 	author_username := m.Author.Username
 	author_channel_id := m.ChannelID
@@ -79,11 +80,14 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			Channel:   author_channel_id,
 			On:        false,
 			Threshold: 5,
+			Frequency: 5,
 			Timestamp: time.Now(),
 		}
 
 		// if not, create him
 		mongo.Create_discorder(discorder)
+
+		new_user = true
 	}
 
 	// trim spaces
@@ -135,12 +139,13 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		if len(discorder.Tokens) > 0 {
 			threshold := strconv.FormatFloat(discorder.Threshold, 'f', 2, 64)
-			message = "You asked me to monitor " + strings.Join(discorder.Tokens, ", ") + " up to a threshold of " + threshold
+			frequency := strconv.FormatFloat(discorder.Frequency, 'f', 2, 64)
+			message = "You asked me to monitor " + strings.Join(discorder.Tokens, ", ") + " up to a threshold of " + threshold + "%, with notification frequency of " + frequency + " minutes"
 		} else {
 			message = "You haven't asked me to monitor any tokens yet."
 		}
 
-	} else if strings.HasPrefix(content, "set ") {
+	} else if strings.HasPrefix(content, "threshold ") {
 
 		t := strings.Split(content, " ")[1]
 		threshold, err := strconv.ParseFloat(t, 64)
@@ -149,7 +154,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			done := mongo.Discorder_set_threshold(author_id, threshold)
 
 			if done {
-				message = "Ok, I changed the notification threshold to " + t
+				message = "Ok, I changed the notification threshold to " + t + "%"
 			} else {
 				message = errors["db_error"]
 			}
@@ -157,9 +162,26 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message = "Threshold must be a number, decimal or integer."
 		}
 
+	} else if strings.HasPrefix(content, "frequency ") {
+
+		t := strings.Split(content, " ")[1]
+		frequency, err := strconv.ParseFloat(t, 64)
+
+		if err == nil {
+			done := mongo.Discorder_set_frequency(author_id, frequency)
+
+			if done {
+				message = "Ok, I changed the notification frequency to " + t + " minutes"
+			} else {
+				message = errors["db_error"]
+			}
+		} else {
+			message = "Frequency must be a number, decimal or integer."
+		}
+
 	} else if content == "help" {
 
-		message = "Alright ~~dipshit~~ " + author_username + ", here's a list of available commands. Some contain a small example at the end.\n"
+		message = "Alright, here's a list of available commands. Some contain a small example at the end.\n"
 		message += "Don't type multiple commands per message; send one at a time.\n\n"
 		message += "```ini\n"
 		message += "[on]      Turn on the bot\n"
@@ -169,7 +191,8 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message += "[remove]  Remove token from monitoring, ex: 'remove OMG'\n"
 		message += "[show]    Show a list of tokens that are being monitored\n"
 		message += "\n"
-		message += "[set]     Threshold for notifications in percent, ex: 'set 5'\n"
+		message += "[threshold]     Threshold for notifications in percent, ex: 'threshold 5'\n"
+		message += "[frequency]     Frequency of notifications in minutes, ex: 'frequency 5'\n"
 		message += "```"
 
 	} else if strings.Contains(content, "serg") {
@@ -182,7 +205,10 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	} else {
 
-		message = "Say `help` for a list of available commands"
+		if new_user {
+			message = "Nice to meet you. "
+		}
+		message += "Say `help` for a list of available commands"
 
 	}
 
@@ -210,7 +236,11 @@ func Notify_discorders(comparisons map[string]utils.Comparison) {
 
 				// if this is a token the user wants us to monitor
 				// and the notification threshold matches set prefernce
-				if utils.StringInSlice(token, d.Tokens) && difference >= d.Threshold {
+				token_match := utils.StringInSlice(token, d.Tokens)
+				threshold_match := difference >= d.Threshold
+				frequency_match := time.Since(d.Last_notification).Minutes() >= d.Frequency
+
+				if token_match && threshold_match && frequency_match {
 
 					string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
 					message += token + " " + string_diff + "% difference between "
@@ -221,6 +251,7 @@ func Notify_discorders(comparisons map[string]utils.Comparison) {
 			}
 
 			session.ChannelMessageSend(d.Channel, message)
+			mongo.Discorder_update_notification_time(d.ID)
 
 		}
 
