@@ -172,7 +172,7 @@ func run() {
 	//-----------------------------------//
 	exchange_prices["binance"] = binance.Get_price(combined_tokens)
 	exchange_prices["kucoin"] = kucoin.Get_price(combined_tokens)
-	//exchange_prices["bitz"] = bitz.Get_price(combined_tokens) api under maintenance
+	exchange_prices["bitz"] = bitz.Get_price(combined_tokens)
 	exchange_prices["okex"] = okex.Get_price(combined_tokens)
 
 	//-----------------------------------//
@@ -180,7 +180,7 @@ func run() {
 	//-----------------------------------//
 	exchange_balances["binance"] = binance.Get_balances(combined_tokens)
 	exchange_balances["kucoin"] = kucoin.Get_balances(combined_tokens)
-	// exchange_balances["bitz"] := bitz.Get_balances(combined_tokens) api under maintenance
+	exchange_balances["bitz"] = bitz.Get_balances(combined_tokens)
 	exchange_balances["okex"] = okex.Get_balances(combined_tokens)
 
 	//-----------------------------------//
