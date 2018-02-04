@@ -491,18 +491,18 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 		comparison := find_min_max_exchanges(prices)
 		comparisons[token] = comparison
 
+		// calculte percentage difference
+		difference := (1 - comparison.Min_price/comparison.Max_price) * 100
+		difference = utils.ToFixed(difference, 0)
+
+		fmt.Println(token, comparison, "Difference:", difference, "%")
+
 		// comparisons are used for personal needs and discord subscribers
 		// however, here we can skip the rest of the process
 		//  if a token us not used for personal trading
 		if exclude[token] {
 			continue
 		}
-
-		// calculte percentage difference
-		difference := (1 - comparison.Min_price/comparison.Max_price) * 100
-		difference = utils.ToFixed(difference, 0)
-
-		fmt.Println(token, comparison, "Difference:", difference, "%")
 
 		// check if difference is over the thershold
 		// if so, trigger the sell
