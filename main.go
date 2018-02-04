@@ -159,20 +159,29 @@ func run() {
 	check_flags(mongo.Get_flags())
 
 	//-----------------------------------//
+	// combine personal and discord user tokens
+	// this should be safe, because trading tokens
+	// depends on minimum of 2 available balances
+	// on distinct exchanges
+	//-----------------------------------//
+	discord_tokens := mongo.Get_discorders_distinct_tokens()
+	combined_tokens := combine_personal_and_discord_tokens(tokens, discord_tokens)
+
+	//-----------------------------------//
 	// get prices from all exchanges
 	//-----------------------------------//
-	exchange_prices["binance"] = binance.Get_price(tokens)
-	exchange_prices["kucoin"] = kucoin.Get_price(tokens)
-	//exchange_prices["bitz"] = bitz.Get_price(tokens) api under maintenance
-	exchange_prices["okex"] = okex.Get_price(tokens)
+	exchange_prices["binance"] = binance.Get_price(combined_tokens)
+	exchange_prices["kucoin"] = kucoin.Get_price(combined_tokens)
+	//exchange_prices["bitz"] = bitz.Get_price(combined_tokens) api under maintenance
+	exchange_prices["okex"] = okex.Get_price(combined_tokens)
 
 	//-----------------------------------//
 	// get balances from all exchanges
 	//-----------------------------------//
-	exchange_balances["binance"] = binance.Get_balances(tokens)
-	exchange_balances["kucoin"] = kucoin.Get_balances(tokens)
-	// exchange_balances["bitz"] := bitz.Get_balances(tokens) api under maintenance
-	exchange_balances["okex"] = okex.Get_balances(tokens)
+	exchange_balances["binance"] = binance.Get_balances(combined_tokens)
+	exchange_balances["kucoin"] = kucoin.Get_balances(combined_tokens)
+	// exchange_balances["bitz"] := bitz.Get_balances(combined_tokens) api under maintenance
+	exchange_balances["okex"] = okex.Get_balances(combined_tokens)
 
 	//-----------------------------------//
 	// exclude tokens that have available balance
@@ -194,6 +203,30 @@ func run() {
 	// save prices from all exchanges
 	//-----------------------------------//
 	mongo.Save_prices(exchange_prices)
+
+}
+
+func combine_personal_and_discord_tokens(tokens map[string]bool, discord_tokens []string) map[string]bool {
+
+	var combined_tokens = make(map[string]bool)
+
+	// copy the original tokens to a new array
+	for k, v := range tokens {
+		combined_tokens[k] = v
+	}
+
+	// add discord tokens
+	for _, d := range discord_tokens {
+
+		if !combined_tokens[d] {
+
+			combined_tokens[d] = true
+
+		}
+
+	}
+
+	return combined_tokens
 
 }
 
@@ -453,19 +486,24 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 
 	for token := range tokens {
 
-		if exclude[token] {
-			continue
-		}
-
 		prices := filter_prices(token, exchange_prices)
 
 		comparison := find_min_max_exchanges(prices)
 		comparisons[token] = comparison
 
+		// comparisons are used for personal needs and discord subscribers
+		// however, here we can skip the rest of the process
+		//  if a token us not used for personal trading
+		if exclude[token] {
+			continue
+		}
+
 		// calculte percentage difference
 		difference := (1 - comparison.Min_price/comparison.Max_price) * 100
 		difference = utils.ToFixed(difference, 0)
+
 		fmt.Println(token, comparison, "Difference:", difference, "%")
+
 		// check if difference is over the thershold
 		// if so, trigger the sell
 		if difference >= percent_threshold {
