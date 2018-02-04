@@ -193,7 +193,13 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message += "\n"
 		message += "[threshold]   Threshold for notifications in percent, ex: 'threshold 5'\n"
 		message += "[frequency]   Frequency of notifications in minutes, ex: 'frequency 5'\n"
+		message += "\n"
+		message += "[info]        Show supported exhanges.\n"
 		message += "```"
+
+	} else if content == "info" {
+
+		message = "I currently support all ETH pairs on Binance, KuCoin, OKex and BitZ."
 
 	} else if strings.Contains(content, "serg") {
 
