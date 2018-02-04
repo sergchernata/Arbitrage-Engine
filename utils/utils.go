@@ -52,6 +52,13 @@ type Balance struct {
 	Timestamp time.Time
 }
 
+type Comparison struct {
+	Min_price    float64
+	Max_price    float64
+	Min_exchange string
+	Max_exchange string
+}
+
 type Discorder struct {
 	ID        string
 	Username  string
@@ -87,4 +94,13 @@ func Ternary(a, b int, condition bool) int {
 	} else {
 		return b
 	}
+}
+
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
