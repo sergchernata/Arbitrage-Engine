@@ -60,13 +60,15 @@ type Comparison struct {
 }
 
 type Discorder struct {
-	ID        string
-	Username  string
-	Channel   string
-	On        bool
-	Tokens    []string
-	Threshold float64
-	Timestamp time.Time
+	ID                string
+	Username          string
+	Channel           string
+	On                bool
+	Tokens            []string
+	Threshold         float64
+	Frequency         float64
+	Last_notification time.Time
+	Timestamp         time.Time
 }
 
 func main() {

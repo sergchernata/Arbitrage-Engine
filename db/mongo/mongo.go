@@ -436,6 +436,44 @@ func Discorder_set_threshold(author_id string, threshold float64) bool {
 
 }
 
+func Discorder_set_frequency(author_id string, frequency float64) bool {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	query := bson.M{"id": author_id}
+	change := bson.M{"$set": bson.M{"frequency": frequency}}
+	err := collection.Update(query, change)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+
+}
+
+func Discorder_update_notification_time(author_id string) bool {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	query := bson.M{"id": author_id}
+	change := bson.M{"$set": bson.M{"last_notification": time.Now()}}
+	err := collection.Update(query, change)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+
+}
+
 func Get_active_discorders() []utils.Discorder {
 
 	session := mgoSession.Clone()
