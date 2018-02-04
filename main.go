@@ -51,7 +51,7 @@ var trade_quantity = make(map[string]int)
 
 // comparisons are stored per token
 // Ex: ["NULS"] = {"Min_price" : 0.04, ...}
-var comparisons = make(map[string]Comparison)
+var comparisons = make(map[string]utils.Comparison)
 
 // currently limited to holding ETH fee
 // charged by each exchange upon withdrawal
@@ -60,13 +60,6 @@ var fees = make(map[string]float64)
 // percentage threshold is the difference between min and max price
 // required for us to profit from running arbitrage
 var percent_threshold float64
-
-type Comparison struct {
-	Min_price    float64
-	Max_price    float64
-	Min_exchange string
-	Max_exchange string
-}
 
 // threshold for writing a message to discord
 var discord_percent_threshold float64
@@ -456,7 +449,7 @@ func check_if_bought(row_id, token, buy_exchange, sell_exchange, buy_tx_id strin
 // if there is sufficient price gap, begins a transaction with sell()
 func compare_prices(exchange_prices map[string]map[string]float64, exclude map[string]bool) {
 
-	messages := make([]string, len(tokens)-len(exclude))
+	messages := make(map[string]string, len(tokens)-len(exclude))
 
 	for token := range tokens {
 
@@ -487,13 +480,17 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 			string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
 			message := token + " " + string_diff + "% difference between "
 			message += comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
-			messages = append(messages, message)
+			messages[token] = message
 
 		}
 
 	}
 
+	// this is a pesonal method, notify me
 	discord.Send_messages(messages)
+
+	// notify discord subscribers
+	discord.Notify_discorders(comparisons)
 
 }
 
@@ -521,9 +518,9 @@ func filter_prices(token string, exchange_prices map[string]map[string]float64) 
 // accepts a list of prices for 1 token
 // fints the minimum and maximum price
 // as well as which exchange they're on
-func find_min_max_exchanges(prices map[string]float64) Comparison {
+func find_min_max_exchanges(prices map[string]float64) utils.Comparison {
 
-	c := Comparison{}
+	c := utils.Comparison{}
 
 	for exchange, price := range prices {
 
@@ -625,7 +622,7 @@ func throw_flag() {
 
 func daily() {
 
-	var messages []string
+	var message string
 	// save daily balance, for time scale tracking
 	mongo.Save_balances(exchange_balances)
 
@@ -638,29 +635,29 @@ func daily() {
 	todays_transactions := mongo.Get_transactions(from_date, to_date)
 
 	// composit the messages of daily summary
-	messages = append(messages, "------------------------start")
-	messages = append(messages, "DAILY SUMMARY")
-	messages = append(messages, "-----------------------------")
+	message += "------------------------start\n"
+	message += "DAILY SUMMARY\n"
+	message += "-----------------------------\n"
 
 	for _, b := range prev_day_balances {
 
-		messages = append(messages, b.Exchange+"... coming soon ")
+		message += b.Exchange + "... coming soon \n"
 
 	}
 
-	messages = append(messages, "-----------------------trades")
+	message += "-----------------------trades\n"
 
 	for _, t := range todays_transactions {
 
 		sell_quantity := fmt.Sprintf("%.2f", t.Sell_quantity)
 		buy_quantity := fmt.Sprintf("%.2f", t.Buy_quantity)
-		messages = append(messages, t.Token+" - sold: "+sell_quantity+", bought: "+buy_quantity)
+		message += t.Token + " - sold: " + sell_quantity + ", bought: " + buy_quantity + "\n"
 
 	}
 
-	messages = append(messages, "--------------------------end")
+	message += "--------------------------end\n"
 
 	// send daily summary to discord
-	discord.Send_messages(messages)
+	discord.Send_daily_summary(message)
 
 }
