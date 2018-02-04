@@ -435,3 +435,19 @@ func Discorder_set_threshold(author_id string, threshold float64) bool {
 	return true
 
 }
+
+func Get_active_discorders() []utils.Discorder {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	var discroders []utils.Discorder
+
+	query := bson.M{"on": true}
+	collection.Find(query).All(&discroders)
+
+	return discroders
+
+}
