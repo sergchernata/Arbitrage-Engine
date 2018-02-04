@@ -451,3 +451,19 @@ func Get_active_discorders() []utils.Discorder {
 	return discroders
 
 }
+
+func Get_discorders_distinct_tokens() []string {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("discord")
+
+	var tokens []string
+
+	query := bson.M{"on": true}
+	collection.Find(query).Distinct("tokens", &tokens)
+
+	return tokens
+
+}
