@@ -62,8 +62,10 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	author_username := m.Author.Username
 	author_channel_id := m.ChannelID
 
-	// don't talk to itself
-	if author_id == bot_id {
+	channel, _ := s.State.Channel(m.ChannelID)
+	fmt.Println(channel.Type)
+	// don't talk to itself and don't respond within group channels
+	if author_id == bot_id || channel.Type != discordgo.ChannelTypeDM {
 		return
 	}
 
@@ -85,7 +87,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		mongo.Create_discorder(discorder)
 	}
 
-	// trim spaces and lowercase
+	// trim spaces
 	content := strings.Trim(m.Content, " ")
 
 	if content == "on" {
