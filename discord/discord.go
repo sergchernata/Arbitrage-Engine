@@ -61,9 +61,8 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	author_id := m.Author.ID
 	author_username := m.Author.Username
 	author_channel_id := m.ChannelID
-
 	channel, _ := s.State.Channel(m.ChannelID)
-	fmt.Println(channel.Type)
+
 	// don't talk to itself and don't respond within group channels
 	if author_id == bot_id || channel.Type != discordgo.ChannelTypeDM {
 		return
@@ -191,7 +190,46 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 }
 
-func Send_messages(messages []string) {
+// notify users who currently have an active bot configuraiton
+// since the bot can be toggled on / off
+func Notify_discorders(comparisons map[string]utils.Comparison) {
+
+	discorders := mongo.Get_active_discorders()
+
+	if len(discorders) > 0 {
+
+		for _, d := range discorders {
+
+			message := ""
+
+			for token, comparison := range comparisons {
+
+				// calculte percentage difference
+				difference := (1 - comparison.Min_price/comparison.Max_price) * 100
+				difference = utils.ToFixed(difference, 0)
+
+				// if this is a token the user wants us to monitor
+				// and the notification threshold matches set prefernce
+				if utils.StringInSlice(token, d.Tokens) && difference >= d.Threshold {
+
+					string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
+					message += token + " " + string_diff + "% difference between "
+					message += comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair\n"
+
+				}
+
+			}
+
+			session.ChannelMessageSend(d.Channel, message)
+
+		}
+
+	}
+
+}
+
+// personal method, for notifying me in a shared channel
+func Send_messages(messages map[string]string) {
 
 	if len(messages) > 0 {
 
@@ -200,6 +238,16 @@ func Send_messages(messages []string) {
 			session.ChannelMessageSend(channel_id, message)
 
 		}
+
+	}
+
+}
+
+func Send_daily_summary(message string) {
+
+	if message != "" {
+
+		session.ChannelMessageSend(channel_id, message)
 
 	}
 
