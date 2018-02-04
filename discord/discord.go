@@ -184,15 +184,15 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message = "Alright, here's a list of available commands. Some contain a small example at the end.\n"
 		message += "Don't type multiple commands per message; send one at a time.\n\n"
 		message += "```ini\n"
-		message += "[on]      Turn on the bot\n"
-		message += "[off]     Turn off the bot\n"
+		message += "[on]          Turn on the bot\n"
+		message += "[off]         Turn off the bot\n"
 		message += "\n"
-		message += "[add]     Add token to be monitored, ex: 'add OMG'\n"
-		message += "[remove]  Remove token from monitoring, ex: 'remove OMG'\n"
-		message += "[show]    Show a list of tokens that are being monitored\n"
+		message += "[add]         Add token to be monitored, ex: 'add OMG'\n"
+		message += "[remove]      Remove token from monitoring, ex: 'remove OMG'\n"
+		message += "[show]        Show a list of tokens that are being monitored\n"
 		message += "\n"
-		message += "[threshold]     Threshold for notifications in percent, ex: 'threshold 5'\n"
-		message += "[frequency]     Frequency of notifications in minutes, ex: 'frequency 5'\n"
+		message += "[threshold]   Threshold for notifications in percent, ex: 'threshold 5'\n"
+		message += "[frequency]   Frequency of notifications in minutes, ex: 'frequency 5'\n"
 		message += "```"
 
 	} else if strings.Contains(content, "serg") {
@@ -250,8 +250,12 @@ func Notify_discorders(comparisons map[string]utils.Comparison) {
 
 			}
 
-			session.ChannelMessageSend(d.Channel, message)
-			mongo.Discorder_update_notification_time(d.ID)
+			if message != "" {
+
+				session.ChannelMessageSend(d.Channel, message)
+				mongo.Discorder_update_notification_time(d.ID)
+
+			}
 
 		}
 
