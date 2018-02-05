@@ -91,7 +91,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// trim spaces
-	content := strings.Trim(m.Content, " ")
+	content := strings.ToLower(strings.Trim(m.Content, " "))
 
 	if content == "on" {
 
@@ -186,14 +186,14 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message += "```ini\n"
 		message += "[on]          Turn on the bot\n"
 		message += "[off]         Turn off the bot\n"
-		message += "\n"
+		message += "---\n"
 		message += "[add]         Add token to be monitored, ex: 'add OMG'\n"
 		message += "[remove]      Remove token from monitoring, ex: 'remove OMG'\n"
 		message += "[show]        Show a list of tokens that are being monitored\n"
-		message += "\n"
+		message += "---\n"
 		message += "[threshold]   Threshold for notifications in percent, ex: 'threshold 5'\n"
 		message += "[frequency]   Frequency of notifications in minutes, ex: 'frequency 5'\n"
-		message += "\n"
+		message += "---\n"
 		message += "[info]        Show supported exhanges.\n"
 		message += "```"
 
