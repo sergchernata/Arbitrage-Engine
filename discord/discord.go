@@ -47,12 +47,19 @@ func Initialize(discord_auth_token, discord_bot_id, discord_channel_id,
 	utils.Check(err)
 
 	session.AddHandler(message_handler)
+	session.AddHandler(ready)
 
 	err = session.Open()
 	utils.Check(err)
 
 	// defer session.Close()
 
+}
+
+func ready(s *discordgo.Session, event *discordgo.Ready) {
+
+	// Set the playing status.
+	s.UpdateStatus(0, "Wolf of Wall Street")
 }
 
 func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
