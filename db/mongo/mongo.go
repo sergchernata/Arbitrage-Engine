@@ -149,6 +149,35 @@ func Get_incomplete_transactions() []utils.Transaction {
 
 }
 
+func Save_comparisons(comparisons map[string]utils.Comparison) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("comparisons")
+	bulk := collection.Bulk()
+
+	var rows []interface{}
+
+	for token, comparison := range comparisons {
+
+		row := bson.M{
+			"token":      token,
+			"comparison": comparison,
+			"timestamp":  time.Now(),
+		}
+
+		rows = append(rows, row)
+
+	}
+
+	bulk.Insert(rows...)
+
+	_, err := bulk.Run()
+	utils.Check(err)
+
+}
+
 func Save_prices(exchange_prices map[string]map[string]float64) {
 
 	session := mgoSession.Clone()

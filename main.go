@@ -209,6 +209,11 @@ func run() {
 	resume_transactions(mongo.Get_incomplete_transactions())
 
 	//-----------------------------------//
+	// save comparisons
+	//-----------------------------------//
+	mongo.Save_comparisons(comparisons)
+
+	//-----------------------------------//
 	// save prices from all exchanges
 	//-----------------------------------//
 	mongo.Save_prices(exchange_prices)
@@ -320,13 +325,9 @@ func resume_transactions(transactions []utils.Transaction) {
 			// enough for us to lose the % difference required to profit
 			comparison := comparisons[t.Token]
 
-			// calculte percentage difference
-			difference := (1 - comparison.Min_price/comparison.Max_price) * 100
-			difference = utils.ToFixed(difference, 0)
-
 			// check if difference is over the thershold
 			// if so, trigger the sell
-			if difference >= percent_threshold {
+			if comparison.Difference >= percent_threshold {
 				start_transfer(t.ID.Hex(), "ETH", t.Sell_exchange, buy_exchange, destination, t.Sell_cost, buy_price)
 			}
 
@@ -529,11 +530,7 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 		comparison := find_min_max_exchanges(prices)
 		comparisons[token] = comparison
 
-		// calculte percentage difference
-		difference := (1 - comparison.Min_price/comparison.Max_price) * 100
-		difference = utils.ToFixed(difference, 0)
-
-		fmt.Println(token, comparison, "Difference:", difference, "%")
+		fmt.Println(token, comparison, "Difference:", comparison.Difference, "%")
 
 		// comparisons are used for personal needs and discord subscribers
 		// however, here we can skip the rest of the process
@@ -544,16 +541,16 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 
 		// check if difference is over the thershold
 		// if so, trigger the sell
-		if difference >= percent_threshold {
+		if comparison.Difference >= percent_threshold {
 
 			place_sell_order(token, comparison.Max_exchange, comparison.Max_price)
 
 		}
 
 		// separate check for discord notifications
-		if difference >= discord_percent_threshold {
+		if comparison.Difference >= discord_percent_threshold {
 
-			string_diff := strconv.FormatFloat(difference, 'f', 0, 64)
+			string_diff := strconv.FormatFloat(comparison.Difference, 'f', 0, 64)
 			message := token + " " + string_diff + "% difference between "
 			message += comparison.Min_exchange + "(min) and " + comparison.Max_exchange + "(max)" + " on ETH pair"
 			messages[token] = message
@@ -621,6 +618,10 @@ func find_min_max_exchanges(prices map[string]float64) utils.Comparison {
 		}
 
 	}
+
+	// calculte percentage difference
+	difference := (1 - c.Min_price/c.Max_price) * 100
+	c.Difference = utils.ToFixed(difference, 0)
 
 	return c
 
