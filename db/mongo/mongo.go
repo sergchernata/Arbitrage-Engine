@@ -252,6 +252,47 @@ func Get_transactions(from_date, to_date time.Time) []utils.Transaction {
 }
 
 //-----------------------------------//
+// utility data storage
+//-----------------------------------//
+
+func Get_listed_token_exchanges(token string) []string {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("utils")
+
+	exchanges := make(map[string][]string)
+
+	query := bson.M{"type": "listed_tokens"}
+	err := collection.Find(query).One(&exchanges)
+	utils.Check(err)
+
+	return exchanges[token]
+
+}
+
+func Update_listed_tokens(tokens map[string][]string) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("utils")
+
+	query := bson.M{"type": "listed_tokens"}
+
+	row := bson.M{
+		"type": "listed_tokens",
+		"data":    tokens,
+		"updated": time.Now(),
+	}
+
+	_, err := collection.Upsert(query, row)
+	utils.Check(err)
+
+}
+
+//-----------------------------------//
 // flag methods
 //
 // mostly used for killing bot
@@ -377,6 +418,7 @@ func Create_discorder(discorder utils.Discorder) {
 	if err := collection.Insert(discorder); err != nil {
 		panic(err)
 	}
+
 }
 
 func Discorder_toggle(author_id string, toggle bool) bool {
