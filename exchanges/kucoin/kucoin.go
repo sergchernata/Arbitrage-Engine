@@ -163,6 +163,39 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	return prices
 }
 
+func Get_listed_tokens() []string {
+
+	var params = ""
+	var endpoint = "/v1/open/tick"
+	var data = new(Prices)
+	var tokens = []string
+	var body []byte
+
+	// perform api call
+	body = execute("GET", api_url, endpoint, params, false)
+
+	err := json.Unmarshal(body, &data)
+	if err != nil {
+		return tokens
+	}
+
+	//parse data and format for return
+	for _, v := range data.Prices {
+
+		// kucoin formats pairs as "LINK-ETH"
+		// this will be the format we convert others to
+		symbol := v.Symbol
+		is_eth_pair := strings.HasSuffix(symbol, "-ETH")
+		token := strings.TrimSuffix(symbol, "-ETH")
+
+		if is_eth_pair {
+			tokens = append(tokens, token)
+		}
+	}
+
+	return tokens
+}
+
 func Place_sell_order(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
 	token += "-ETH"
