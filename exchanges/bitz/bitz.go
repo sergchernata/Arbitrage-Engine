@@ -127,7 +127,7 @@ func Get_listed_tokens() []string {
 	var params = ""
 	var endpoint = "/api_v1/tickerall"
 	var data interface{}
-	var tokens = []string
+	var tokens []string
 	var body []byte
 
 	// perform api call

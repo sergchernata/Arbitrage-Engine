@@ -168,7 +168,7 @@ func Get_listed_tokens() []string {
 	var params = ""
 	var endpoint = "/v1/open/tick"
 	var data = new(Prices)
-	var tokens = []string
+	var tokens []string
 	var body []byte
 
 	// perform api call

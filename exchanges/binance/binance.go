@@ -148,7 +148,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 func Get_listed_tokens() []string {
 
 	var endpoint = "/api/v3/ticker/price"
-	var tokens = []string
+	var tokens []string
 	var data = new(Prices)
 	var body []byte
 
