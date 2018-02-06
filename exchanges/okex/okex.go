@@ -152,6 +152,33 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	return prices
 }
 
+func Get_listed_tokens(search []string) []string {
+
+	var endpoint = "/ticker.do"
+	var tokens []string
+	var body []byte
+
+	// perform api call per token
+	for _, token := range search {
+
+		var data = new(Prices)
+		var params = fmt.Sprintf("symbol=%s", token+"_ETH")
+
+		// perform api call
+		body = execute("GET", api_url, endpoint, params)
+
+		err := json.Unmarshal(body, &data)
+		if err != nil {
+			continue
+		}
+
+		tokens = append(tokens, token)
+
+	}
+
+	return tokens
+}
+
 func Place_sell_order(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
 	var endpoint = "/trade.do"
