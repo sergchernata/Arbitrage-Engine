@@ -123,17 +123,22 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} else if strings.HasPrefix(content, "add ") {
 
 		token := strings.ToUpper(strings.Split(content, " ")[1])
-		done := mongo.Discorder_update_tokens(author_id, "$push", token)
 
-		if done {
-			message = "Ok, I'll monitor " + token + " as well."
+		if utils.StringInSlice(token, discorder.Tokens) {
+			message = token + " is already being monitored."
 		} else {
-			message = errors["db_error"]
+			done := mongo.Discorder_update_tokens(author_id, "$addToSet", token)
+
+			if done {
+				message = "Ok, I'll monitor " + token + " as well."
+			} else {
+				message = errors["db_error"]
+			}
 		}
 
 	} else if strings.HasPrefix(content, "remove ") {
 
-		token := strings.Split(content, " ")[1]
+		token := strings.ToUpper(strings.Split(content, " ")[1])
 		done := mongo.Discorder_update_tokens(author_id, "$pull", token)
 
 		if done {
@@ -150,6 +155,10 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message = "You asked me to monitor " + strings.Join(discorder.Tokens, ", ") + " up to a threshold of " + threshold + "%, with notification frequency of " + frequency + " minutes"
 		} else {
 			message = "You haven't asked me to monitor any tokens yet."
+		}
+
+		if !discorder.On {
+			message += "\nBut I'm currently **turned OFF**."
 		}
 
 	} else if strings.HasPrefix(content, "threshold ") {
