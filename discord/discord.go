@@ -147,19 +147,26 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message = errors["db_error"]
 		}
 
-	} else if content == "show" {
+	} else if content == "status" {
+
+		threshold := strconv.FormatFloat(discorder.Threshold, 'f', 2, 64)
+		frequency := strconv.FormatFloat(discorder.Frequency, 'f', 2, 64)
+		status := "on"
+		tokens := "none"
 
 		if len(discorder.Tokens) > 0 {
-			threshold := strconv.FormatFloat(discorder.Threshold, 'f', 2, 64)
-			frequency := strconv.FormatFloat(discorder.Frequency, 'f', 2, 64)
-			message = "You asked me to monitor " + strings.Join(discorder.Tokens, ", ") + " up to a threshold of " + threshold + "%, with notification frequency of " + frequency + " minutes"
-		} else {
-			message = "You haven't asked me to monitor any tokens yet."
+			tokens = strings.Join(discorder.Tokens, ", ")
 		}
 
 		if !discorder.On {
-			message += "\nBut I'm currently **turned OFF**."
+			status = "off"
 		}
+
+		message = "```ini\n"
+		message += "Notifications [" + status + "] | Frequency [" + frequency + " min] |  Threshold [" + threshold + "%]\n"
+		message += "--------------------------------------------------------------\n"
+		message += "Tokens: " + tokens + ".\n\n"
+		message += "```"
 
 	} else if strings.HasPrefix(content, "threshold ") {
 
@@ -202,20 +209,34 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message += "```ini\n"
 		message += "[on]          Turn on the bot\n"
 		message += "[off]         Turn off the bot\n"
+		message += "[status]      Show all settings and current bot status\n"
 		message += "---\n"
 		message += "[add]         Add token to be monitored, ex: 'add OMG'\n"
 		message += "[remove]      Remove token from monitoring, ex: 'remove OMG'\n"
-		message += "[show]        Show a list of tokens that are being monitored\n"
 		message += "---\n"
 		message += "[threshold]   Threshold for notifications in percent, ex: 'threshold 5'\n"
 		message += "[frequency]   Frequency of notifications in minutes, ex: 'frequency 5'\n"
 		message += "---\n"
-		message += "[info]        Show supported exhanges.\n"
+		message += "[about]       Show supported exhanges.\n"
 		message += "```"
 
-	} else if content == "info" {
+	} else if content == "about" {
 
-		message = "I currently support all ETH pairs on Binance, KuCoin, OKex and BitZ."
+		status := "on"
+
+		if !discorder.On {
+			status = "off"
+		}
+
+		message = "```ini\n"
+		message += "Your notifications are turned [" + status + "]\n"
+		message += "---\n"
+		message += "I support monitoring of all ETH pairs on the following exchanges:\n\n"
+		message += "• Binance\n"
+		message += "• Kucoin\n"
+		message += "• OKex\n"
+		message += "• Bitz\n"
+		message += "```"
 
 	} else if strings.Contains(content, "serg") {
 
