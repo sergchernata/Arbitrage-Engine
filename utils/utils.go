@@ -106,3 +106,23 @@ func StringInSlice(a string, list []string) bool {
 	}
 	return false
 }
+
+func Merge_uniques(temp... []string) []string {
+
+	var unique []string
+
+	for _, tokens := range temp {
+
+		for _, token := range tokens {
+
+			if !StringInSlice(token, unique) {
+				unique = append(unique, token)
+			}
+
+		}
+
+	}
+
+	return unique
+
+}
