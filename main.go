@@ -45,6 +45,9 @@ var exchange_prices = make(map[string]map[string]float64)
 // same story and structure as exchange_prices above
 var exchange_balances = make(map[string]map[string]float64)
 
+// same story and structure as exchange_prices above
+var listed_tokens = make(map[string][]string)
+
 // each key is a token symbol, matching the array of tokens above
 // each value is the number of tokens to be sold at once per trade
 var trade_quantity = make(map[string]int)
@@ -148,6 +151,12 @@ func main() {
 	daily.Every(1).Day().At("20:00").Do(daily)
 	<-daily.Start()
 
+	// every 3 days, look at all tokens
+	// listed on supported exchanges
+	analyze := gocron.NewScheduler()
+	analyze.Every(3).Day().Do(analyze)
+	<-analyze.Start()
+
 }
 
 func run() {
@@ -203,6 +212,35 @@ func run() {
 	// save prices from all exchanges
 	//-----------------------------------//
 	mongo.Save_prices(exchange_prices)
+
+}
+
+func analyze () {
+
+	unique := make(map[string][]string)
+
+	listed_tokens["binance"] = binance.Get_listed_tokens()
+	listed_tokens["kucoin"] = kucoin.Get_listed_tokens()
+	listed_tokens["bitz"] = bitz.Get_listed_tokens()
+
+	// OKEX has no convenient way of getting a list of all listed tokens
+	// thus, we have to pass everything we collected thus far
+	// and look up each token one by one
+	combo := utils.Merge_uniques(listed_tokens["binance"], listed_tokens["kucoin"], listed_tokens["bitz"])
+	listed_tokens["okex"] = okex.Get_listed_tokens(combo)
+
+	// format for storage
+	for exchange, tokens := range listed_tokens {
+
+		for _, token := range tokens {
+
+			unique[token] = append(unique[token], exchange)
+
+		}
+
+	}
+
+	mongo.Update_listed_tokens(unique)
 
 }
 
