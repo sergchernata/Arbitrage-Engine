@@ -163,7 +163,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		message = "```ini\n"
-		message += "Notifications [" + status + "] | Frequency [" + frequency + " min] |  Threshold [" + threshold + "%]\n"
+		message += "Notifications [" + status + "] | Frequency [" + frequency + " min] | Threshold [" + threshold + "%]\n"
 		message += "--------------------------------------------------------------\n"
 		message += "Tokens: " + tokens + ".\n\n"
 		message += "```"
