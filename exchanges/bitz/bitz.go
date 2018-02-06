@@ -122,6 +122,41 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	return prices
 }
 
+func Get_listed_tokens() []string {
+
+	var params = ""
+	var endpoint = "/api_v1/tickerall"
+	var data interface{}
+	var tokens = []string
+	var body []byte
+
+	// perform api call
+	body = execute("GET", api_url, endpoint, params)
+
+	err := json.Unmarshal(body, &data)
+	check(err)
+
+	all := data.(map[string]interface{})
+	allPrices := all["data"].(map[string]interface{})
+
+	//parse data and format for return
+	for k, _ := range allPrices {
+
+		// bitz formats pairs as "link_eth"
+		// they also use token as key itself, which is the reason
+		// for parsing this data into a generic interface and not a struct
+		symbol := strings.ToUpper(k)
+		is_eth_pair := strings.HasSuffix(symbol, "_ETH")
+		token := strings.TrimSuffix(symbol, "_ETH")
+
+		if is_eth_pair {
+			tokens = append(tokens, token)
+		}
+	}
+
+	return tokens
+}
+
 func Place_sell_order(token string, quantity int, price float64) (transaction_id string, sell_placed bool) {
 
 	token += "_ETH"
