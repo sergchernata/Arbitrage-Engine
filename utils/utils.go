@@ -57,6 +57,7 @@ type Comparison struct {
 	Max_price    float64
 	Min_exchange string
 	Max_exchange string
+	Difference   float64
 }
 
 type Discorder struct {
