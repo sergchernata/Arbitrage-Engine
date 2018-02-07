@@ -101,7 +101,7 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
-
+	// check if there's a way to deal with timeouts and errors here
 	err := json.Unmarshal(body, &data)
 	if err != nil {
 		return holdings
@@ -110,12 +110,14 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 	// remove tokens that we don't care about
 	for token, amount := range data.Info.Funds.Free.(map[string]interface{}) {
 
-		token = strings.ToUpper(token)
-		amount, err := strconv.ParseFloat(amount.(string), 64)
-		check(err)
+		if amount.(string) != "" {
+			token = strings.ToUpper(token)
+			amount, err := strconv.ParseFloat(amount.(string), 64)
+			check(err)
 
-		if tokens[token] {
-			holdings[token] = amount
+			if tokens[token] {
+				holdings[token] = amount
+			}
 		}
 	}
 
@@ -142,10 +144,12 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 			return prices
 		}
 
-		price, err := strconv.ParseFloat(data.Data.Last, 64)
-		check(err)
+		if data.Data.Last != "" {
+			price, err := strconv.ParseFloat(data.Data.Last, 64)
+			check(err)
 
-		prices[token+"-ETH"] = price
+			prices[token+"-ETH"] = price
+		}
 
 	}
 
@@ -168,7 +172,7 @@ func Get_listed_tokens(search []string) []string {
 		body = execute("GET", api_url, endpoint, params)
 
 		err := json.Unmarshal(body, &data)
-		if err != nil {
+		if err != nil || data.Data.Buy == "" {
 			continue
 		}
 
