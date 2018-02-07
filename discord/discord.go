@@ -123,17 +123,24 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} else if strings.HasPrefix(content, "add ") {
 
 		token := strings.ToUpper(strings.Split(content, " ")[1])
+		listeded_on := mongo.Get_listed_token_exchanges(token)
 
-		if utils.StringInSlice(token, discorder.Tokens) {
-			message = token + " is already being monitored."
-		} else {
-			done := mongo.Discorder_update_tokens(author_id, "$addToSet", token)
+		if len(listeded_on) > 0 {
 
-			if done {
-				message = "Ok, I'll monitor " + token + " as well."
+			if utils.StringInSlice(token, discorder.Tokens) {
+				message = token + " is already being monitored."
 			} else {
-				message = errors["db_error"]
+				done := mongo.Discorder_update_tokens(author_id, "$addToSet", token)
+
+				if done {
+					message = "Ok, I'll monitor " + token + " as well."
+				} else {
+					message = errors["db_error"]
+				}
 			}
+
+		} else {
+			message = token + " is not currently supported. The exchanges I monitor aren't trading it on ETH pair."
 		}
 
 	} else if strings.HasPrefix(content, "remove ") {
@@ -145,6 +152,23 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message = "Ok, I will no longer monitor " + token + "."
 		} else {
 			message = errors["db_error"]
+		}
+
+	} else if strings.HasPrefix(content, "info ") {
+
+		token := strings.ToUpper(strings.Split(content, " ")[1])
+		analysis := mongo.Get_token_analysis(token)
+		listeded_on := mongo.Get_listed_token_exchanges(token)
+		exchanges := strings.Join(listeded_on, ", ")
+
+		if len(listeded_on) > 1 {
+			message = "```ini\n"
+			message += "Exchanges [" + len(listeded_on) + "] | Avg. Delta [" + analysis.avg_diff + "%]\n"
+			message += "--------------------------------------------------------------\n"
+			message += "Listed on: " + exchanges + ".\n\n"
+			message += "```"
+		} else {
+			message = "I don't have an analysis on this token. :("
 		}
 
 	} else if content == "status" {
@@ -212,7 +236,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message += "[status]      Show all settings and current bot status\n"
 		message += "---\n"
 		message += "[add]         Add token to be monitored, ex: 'add OMG'\n"
-		message += "[remove]      Remove token from monitoring, ex: 'remove OMG'\n"
+		message += "[remove]      Accepts token symbol or 'ALL' keyword.\n"
 		message += "---\n"
 		message += "[threshold]   Threshold for notifications in percent, ex: 'threshold 5'\n"
 		message += "[frequency]   Frequency of notifications in minutes, ex: 'frequency 5'\n"
