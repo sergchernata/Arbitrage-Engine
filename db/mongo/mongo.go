@@ -280,6 +280,35 @@ func Get_transactions(from_date, to_date time.Time) []utils.Transaction {
 
 }
 
+func Get_token_analysis(token string) []string {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("comparisons")
+
+	pipe := c.Pipe(
+        []bson.M{
+            bson.M{
+                "$match": bson.M{
+                    "token": token,
+                },
+            },
+            bson.M{
+                "$group": bson.M{
+                    "avg_diff": bson.M{"$avg": "comparison.difference"},
+                },
+            },
+        },
+    )
+	resp := []bson.M{}
+	err := pipe.All(&resp)
+	check(err)
+
+	fmt.Println(resp) // simple print proving it's working
+
+}
+
 //-----------------------------------//
 // utility data storage
 //-----------------------------------//
@@ -291,13 +320,13 @@ func Get_listed_token_exchanges(token string) []string {
 
 	collection := session.DB(mgoDatabase).C("utils")
 
-	exchanges := make(map[string][]string)
+	tokens := make(map[string][]string)
 
 	query := bson.M{"type": "listed_tokens"}
-	err := collection.Find(query).One(&exchanges)
+	err := collection.Find(query).One(&tokens)
 	utils.Check(err)
 
-	return exchanges[token]
+	return tokens[token]
 
 }
 
@@ -477,7 +506,13 @@ func Discorder_update_tokens(author_id, action, token string) bool {
 	collection := session.DB(mgoDatabase).C("discord")
 
 	query := bson.M{"id": author_id}
-	change := bson.M{action: bson.M{"tokens": token}}
+
+	// special command for wiping all tokens
+	if action == "$pull" && token == "ALL" {
+		change := bson.M{action: bson.M{"tokens": {"$exists": true}}}
+	} else {
+		change := bson.M{action: bson.M{"tokens": token}}
+	}
 	err := collection.Update(query, change)
 
 	if err != nil {
