@@ -58,6 +58,7 @@ type Comparison struct {
 	Min_exchange string
 	Max_exchange string
 	Difference   float64
+	Timestamp    time.Time
 }
 
 type Discorder struct {
@@ -72,8 +73,21 @@ type Discorder struct {
 	Timestamp         time.Time
 }
 
-func main() {
+type Analysis struct {
+	ID                string
+	Avg_diff          float64
+	Max_diff          float64
+	Min_diff          float64
+	Max_diff_min_exch string
+	Max_diff_max_exch string
+	Max_diff_time     time.Time
+	Timestamp         time.Time
+}
 
+type Listed struct {
+	ID      string
+	Data    map[string][]string
+	Updated time.Time
 }
 
 func Check(e error) {
@@ -108,7 +122,7 @@ func StringInSlice(a string, list []string) bool {
 	return false
 }
 
-func Merge_uniques(temp... []string) []string {
+func Merge_uniques(temp ...[]string) []string {
 
 	var unique []string
 
