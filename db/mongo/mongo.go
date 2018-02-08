@@ -1,7 +1,7 @@
 package mongo
 
 import (
-	// "fmt"
+	"fmt"
 	// go get gopkg.in/mgo.v2
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -24,6 +24,8 @@ type Price struct {
 }
 
 func Initialize(host string, database string, username string, password string) {
+
+	fmt.Println("initializing mongo package")
 
 	session, err := mgo.Dial(host)
 	utils.Check(err)
@@ -280,32 +282,58 @@ func Get_transactions(from_date, to_date time.Time) []utils.Transaction {
 
 }
 
-func Get_token_analysis(token string) []string {
+func Get_token_analysis(token string) utils.Analysis {
 
 	session := mgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(mgoDatabase).C("comparisons")
+	var analysis utils.Analysis
+	biggest_diff := make(map[string]utils.Comparison)
+	smallest_diff := make(map[string]utils.Comparison)
 
-	pipe := c.Pipe(
-        []bson.M{
-            bson.M{
-                "$match": bson.M{
-                    "token": token,
-                },
-            },
-            bson.M{
-                "$group": bson.M{
-                    "avg_diff": bson.M{"$avg": "comparison.difference"},
-                },
-            },
-        },
-    )
-	resp := []bson.M{}
-	err := pipe.All(&resp)
-	check(err)
+	pipe := collection.Pipe(
+		[]bson.M{
+			bson.M{
+				"$match": bson.M{
+					"token": token,
+				},
+			},
+			bson.M{
+				"$group": bson.M{
+					"_id":      nil,
+					"avg_diff": bson.M{"$avg": "$comparison.difference"},
+				},
+			},
+		},
+	)
 
-	fmt.Println(resp) // simple print proving it's working
+	err := pipe.One(&analysis)
+
+	if err == nil {
+
+		current_time := time.Now()
+		query_time := current_time.Add(-30 * 24 * time.Hour)
+		query := bson.M{"token": token, "timestamp": bson.M{"$gt": query_time}}
+
+		// record of biggest price difference in last 30 days
+		err := collection.Find(query).Select(bson.M{"comparison": 1}).Sort("-comparison.difference").One(&biggest_diff)
+		utils.Check(err)
+
+		// record of smallest price difference in last 30 days
+		err = collection.Find(query).Select(bson.M{"comparison": 1}).Sort("comparison.difference").One(&smallest_diff)
+		utils.Check(err)
+
+		analysis.Max_diff = biggest_diff["comparison"].Difference
+		analysis.Min_diff = smallest_diff["comparison"].Difference
+		analysis.Max_diff_min_exch = biggest_diff["comparison"].Min_exchange
+		analysis.Max_diff_max_exch = biggest_diff["comparison"].Max_exchange
+		analysis.Max_diff_time = biggest_diff["comparison"].Timestamp
+		analysis.Timestamp = time.Now()
+
+	}
+
+	return analysis
 
 }
 
@@ -320,13 +348,13 @@ func Get_listed_token_exchanges(token string) []string {
 
 	collection := session.DB(mgoDatabase).C("utils")
 
-	tokens := make(map[string][]string)
+	var tokens utils.Listed
 
 	query := bson.M{"type": "listed_tokens"}
 	err := collection.Find(query).One(&tokens)
 	utils.Check(err)
 
-	return tokens[token]
+	return tokens.Data[token]
 
 }
 
@@ -340,7 +368,7 @@ func Update_listed_tokens(tokens map[string][]string) {
 	query := bson.M{"type": "listed_tokens"}
 
 	row := bson.M{
-		"type": "listed_tokens",
+		"type":    "listed_tokens",
 		"data":    tokens,
 		"updated": time.Now(),
 	}
@@ -506,13 +534,13 @@ func Discorder_update_tokens(author_id, action, token string) bool {
 	collection := session.DB(mgoDatabase).C("discord")
 
 	query := bson.M{"id": author_id}
+	change := bson.M{action: bson.M{"tokens": token}}
 
 	// special command for wiping all tokens
 	if action == "$pull" && token == "ALL" {
-		change := bson.M{action: bson.M{"tokens": {"$exists": true}}}
-	} else {
-		change := bson.M{action: bson.M{"tokens": token}}
+		change = bson.M{action: bson.M{"tokens": bson.M{"$exists": true}}}
 	}
+
 	err := collection.Update(query, change)
 
 	if err != nil {
