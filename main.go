@@ -622,6 +622,7 @@ func find_min_max_exchanges(prices map[string]float64) utils.Comparison {
 	// calculte percentage difference
 	difference := (1 - c.Min_price/c.Max_price) * 100
 	c.Difference = utils.ToFixed(difference, 2)
+	c.Timestamp = time.Now()
 
 	return c
 
