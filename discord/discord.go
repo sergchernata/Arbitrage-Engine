@@ -123,9 +123,9 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} else if strings.HasPrefix(content, "add ") {
 
 		token := strings.ToUpper(strings.Split(content, " ")[1])
-		listeded_on := mongo.Get_listed_token_exchanges(token)
+		listed_on := mongo.Get_listed_token_exchanges(token)
 
-		if len(listeded_on) > 0 {
+		if len(listed_on) > 0 {
 
 			if utils.StringInSlice(token, discorder.Tokens) {
 				message = token + " is already being monitored."
@@ -156,16 +156,31 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	} else if strings.HasPrefix(content, "info ") {
 
+		// get data
 		token := strings.ToUpper(strings.Split(content, " ")[1])
 		analysis := mongo.Get_token_analysis(token)
 		listeded_on := mongo.Get_listed_token_exchanges(token)
+
+		// format for display
+		avg_diff := strconv.FormatFloat(analysis.Avg_diff, 'f', 2, 64)
+		min_diff := strconv.FormatFloat(analysis.Min_diff, 'f', 2, 64)
+		max_diff := strconv.FormatFloat(analysis.Max_diff, 'f', 2, 64)
+		num_exchanges := strconv.Itoa(len(listeded_on))
 		exchanges := strings.Join(listeded_on, ", ")
+
+		// format the time timestamp of max price event
+		//time_now := time.Now()
+		time_of_max := analysis.Max_diff_time
+		date_of_max := time_of_max.Format("02/01/06 at 03:04")
+		//time_diff := time_now.Sub(time_of_max)
 
 		if len(listeded_on) > 1 {
 			message = "```ini\n"
-			message += "Exchanges [" + len(listeded_on) + "] | Avg. Delta [" + analysis.avg_diff + "%]\n"
+			message += "Difference: Avg [" + avg_diff + "%] | Max [" + max_diff + "%] |  Min [" + min_diff + "%]\n"
 			message += "--------------------------------------------------------------\n"
-			message += "Listed on: " + exchanges + ".\n\n"
+			message += "Max diff. between " + analysis.Max_diff_min_exch + "(min) and " + analysis.Max_diff_max_exch + "(max) on " + date_of_max + " \n"
+			message += "--------------------------------------------------------------\n"
+			message += "Listed on [" + num_exchanges + "]: " + exchanges + ".\n\n"
 			message += "```"
 		} else {
 			message = "I don't have an analysis on this token. :("
@@ -237,6 +252,7 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message += "---\n"
 		message += "[add]         Add token to be monitored, ex: 'add OMG'\n"
 		message += "[remove]      Accepts token symbol or 'ALL' keyword.\n"
+		message += "[info]        Last 30 days of token performance, ex: 'info NULS'\n"
 		message += "---\n"
 		message += "[threshold]   Threshold for notifications in percent, ex: 'threshold 5'\n"
 		message += "[frequency]   Frequency of notifications in minutes, ex: 'frequency 5'\n"
