@@ -133,8 +133,7 @@ func init() {
 	okex.Initialize(props["OKEX_URL"], props["OKEX_KEY"], props["OKEX_SECRET"], props["OKEX_TRADEPW"], props["OKEX_ETH_FEE"])
 
 	// initialize discord bot
-	discord.Initialize(props["DISCORD_AUTH_TOKEN"], props["DISCORD_BOT_ID"], props["DISCORD_CHANNEL_ID"],
-		props["HOST"], props["DATABASE"], props["USERNAME"], props["PASSWORD"])
+	discord.Initialize(props["DISCORD_AUTH_TOKEN"], props["DISCORD_BOT_ID"], props["DISCORD_CHANNEL_ID"])
 
 }
 
@@ -181,7 +180,7 @@ func run() {
 	//-----------------------------------//
 	exchange_prices["binance"] = binance.Get_price(combined_tokens)
 	exchange_prices["kucoin"] = kucoin.Get_price(combined_tokens)
-	exchange_prices["bitz"] = bitz.Get_price(combined_tokens)
+	// exchange_prices["bitz"] = bitz.Get_price(combined_tokens)
 	exchange_prices["okex"] = okex.Get_price(combined_tokens)
 
 	//-----------------------------------//
@@ -189,7 +188,7 @@ func run() {
 	//-----------------------------------//
 	exchange_balances["binance"] = binance.Get_balances(combined_tokens)
 	exchange_balances["kucoin"] = kucoin.Get_balances(combined_tokens)
-	exchange_balances["bitz"] = bitz.Get_balances(combined_tokens)
+	// exchange_balances["bitz"] = bitz.Get_balances(combined_tokens)
 	exchange_balances["okex"] = okex.Get_balances(combined_tokens)
 
 	//-----------------------------------//
