@@ -112,75 +112,105 @@ func message_handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message = errors["db_error"]
 		}
 
-	} else if strings.HasPrefix(content, "add ") {
+	} else if strings.HasPrefix(content, "add") {
 
-		token := strings.ToUpper(strings.Split(content, " ")[1])
-		listed_on := mongo.Get_listed_token_exchanges(token)
+		parts := strings.Split(content, " ")
 
-		if len(listed_on) > 0 {
+		if len(parts) > 1 {
 
-			if utils.StringInSlice(token, discorder.Tokens) {
-				message = token + " is already being monitored."
-			} else {
-				done := mongo.Discorder_update_tokens(author_id, "$addToSet", token)
+			token := strings.ToUpper(strings.Split(content, " ")[1])
+			listed_on := mongo.Get_listed_token_exchanges(token)
 
-				if done {
-					message = "Ok, I'll monitor " + token + " as well."
+			if len(listed_on) > 0 {
+
+				if utils.StringInSlice(token, discorder.Tokens) {
+					message = token + " is already being monitored."
 				} else {
-					message = errors["db_error"]
+					done := mongo.Discorder_update_tokens(author_id, "$addToSet", token)
+
+					if done {
+						message = "Ok, I'll monitor " + token + " as well."
+					} else {
+						message = errors["db_error"]
+					}
 				}
-			}
 
-		} else {
-			message = token + " is not currently supported. The exchanges I monitor aren't trading it on ETH pair."
-		}
-
-	} else if strings.HasPrefix(content, "remove ") {
-
-		token := strings.ToUpper(strings.Split(content, " ")[1])
-		done := mongo.Discorder_update_tokens(author_id, "$pull", token)
-
-		if done {
-			if token == "ALL" {
-				message = "Ok, I have erased all of the tokens you've told me to monitor."
 			} else {
-				message = "Ok, I will no longer monitor " + token + "."
+				message = token + " is not currently supported. The exchanges I monitor aren't trading it on ETH pair."
 			}
 
 		} else {
-			message = errors["db_error"]
+			message = "`add` command requires a second paremeter, ex: `add OMG`"
 		}
 
-	} else if strings.HasPrefix(content, "info ") {
+	} else if strings.HasPrefix(content, "remove") {
 
-		// get data
-		token := strings.ToUpper(strings.Split(content, " ")[1])
-		analysis := mongo.Get_token_analysis(token)
-		listeded_on := mongo.Get_listed_token_exchanges(token)
+		parts := strings.Split(content, " ")
 
-		// format for display
-		avg_diff := strconv.FormatFloat(analysis.Avg_diff, 'f', 2, 64)
-		min_diff := strconv.FormatFloat(analysis.Min_diff, 'f', 2, 64)
-		max_diff := strconv.FormatFloat(analysis.Max_diff, 'f', 2, 64)
-		num_exchanges := strconv.Itoa(len(listeded_on))
-		exchanges := strings.Join(listeded_on, ", ")
+		if len(parts) > 1 {
 
-		// format the time timestamp of max price event
-		//time_now := time.Now()
-		time_of_max := analysis.Max_diff_time
-		date_of_max := time_of_max.Format("02/01/06 at 03:04")
-		//time_diff := time_now.Sub(time_of_max)
+			token := strings.ToUpper(strings.Split(content, " ")[1])
+			done := mongo.Discorder_update_tokens(author_id, "$pull", token)
 
-		if len(listeded_on) > 1 {
-			message = "```ini\n"
-			message += "Difference: Avg [" + avg_diff + "%] | Max [" + max_diff + "%] |  Min [" + min_diff + "%]\n"
-			message += "--------------------------------------------------------------\n"
-			message += "Max diff. between " + analysis.Max_diff_min_exch + "(min) and " + analysis.Max_diff_max_exch + "(max) on " + date_of_max + " \n"
-			message += "--------------------------------------------------------------\n"
-			message += "Listed on [" + num_exchanges + "]: " + exchanges + ".\n\n"
-			message += "```"
+			if done {
+				if token == "ALL" {
+					message = "Ok, I have erased all of the tokens you've told me to monitor."
+				} else {
+					message = "Ok, I will no longer monitor " + token + "."
+				}
+
+			} else {
+				message = errors["db_error"]
+			}
+
 		} else {
-			message = "I don't have an analysis on this token. :("
+			message = "`remove` command requires a second paremeter. A token or keyword `ALL`, ex: `remove OMG`"
+		}
+
+	} else if strings.HasPrefix(content, "info") {
+
+		parts := strings.Split(content, " ")
+
+		if len(parts) > 1 {
+
+			token := strings.ToUpper(parts[1])
+			analysis := mongo.Get_token_analysis(token)
+			listeded_on := mongo.Get_listed_token_exchanges(token)
+
+			// format for display
+			avg_diff := strconv.FormatFloat(analysis.Avg_diff, 'f', 2, 64)
+			min_diff := strconv.FormatFloat(analysis.Min_diff, 'f', 2, 64)
+			max_diff := strconv.FormatFloat(analysis.Max_diff, 'f', 2, 64)
+			num_exchanges := strconv.Itoa(len(listeded_on))
+			exchanges := strings.Join(listeded_on, ", ")
+
+			// format the time timestamp of max price event
+			//time_now := time.Now()
+			time_of_max := analysis.Max_diff_time
+			date_of_max := time_of_max.Format("02/01/06 at 03:04")
+			//time_diff := time_now.Sub(time_of_max)
+
+			if len(listeded_on) > 1 {
+				message = "```ini\n"
+				message += "Difference: Avg [" + avg_diff + "%] | Max [" + max_diff + "%] |  Min [" + min_diff + "%]\n"
+				message += "--------------------------------------------------------------\n"
+				message += "Max diff. between " + analysis.Max_diff_min_exch + "(min) and " + analysis.Max_diff_max_exch + "(max) on " + date_of_max + " \n"
+				message += "--------------------------------------------------------------\n"
+				message += "Listed on [" + num_exchanges + "]: " + exchanges + ".\n\n"
+				message += "```"
+			} else if len(listeded_on) == 1 {
+				message = "```ini\n"
+				message += token + " is traded on less than 2 exchanges that I monitor.\n"
+				message += "Arbitrage analysis is unavailable.\n"
+				message += "--------------------------------------------------------------\n"
+				message += "Listed on [" + num_exchanges + "]: " + exchanges + ".\n\n"
+				message += "```"
+			} else {
+				message = "None of the exchanges I monitor trade " + token + " on ETH pair."
+			}
+
+		} else {
+			message = "`info` command requires a second paremeter, ex: `info OMG`"
 		}
 
 	} else if content == "status" {
