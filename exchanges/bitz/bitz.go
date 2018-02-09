@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	// "reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -111,6 +112,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		symbol := strings.ToUpper(k)
 		is_eth_pair := strings.HasSuffix(symbol, "_ETH")
 		token := strings.TrimSuffix(symbol, "_ETH")
+		// TODO: throws error fmt.Println(details, reflect.TypeOf(details["last"]))
 		price, err := strconv.ParseFloat(details["last"].(string), 64)
 		check(err)
 
