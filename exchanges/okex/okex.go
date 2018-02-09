@@ -271,7 +271,7 @@ func Check_if_transferred(sell_cost float64) bool {
 
 	// perform api call
 	body = execute("POST", api_url, endpoint, params)
-	fmt.Println(string(body))
+
 	err := json.Unmarshal(body, &deposits)
 	check(err)
 

@@ -422,7 +422,7 @@ func start_transfer(row_id, token, sell_exchange, buy_exchange, destination stri
 func check_if_transferred(row_id, buy_exchange string, sell_cost float64) {
 
 	transferred := false
-	sell_cost -= fees[buy_exchange]
+	sell_cost = utils.ToFixed(sell_cost-fees[buy_exchange], 4)
 
 	switch buy_exchange {
 
