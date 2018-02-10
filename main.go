@@ -334,8 +334,10 @@ func resume_transactions(transactions []utils.Transaction) {
 			check_if_transferred(t.ID.Hex(), t.Buy_exchange, t.Sell_cost)
 
 		case utils.TransferCompleted:
-			quantity := t.Sell_cost / t.Buy_price
-			buy_price := comparisons[t.Token].Min_price
+
+			token := strings.ToUpper(t.Token + "-ETH")
+			buy_price := exchange_prices[t.Buy_exchange][token]
+			quantity := t.Sell_cost / buy_price
 
 			// if we're about to place a buy order
 			// for a less than profitable amount of tokens
