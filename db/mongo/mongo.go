@@ -134,7 +134,7 @@ func Buy_order_completed(row_id string) {
 
 }
 
-func Token_reset_completed(row_id string) {
+func Token_reset_completed(row_id, transaction_id string) {
 
 	session := mgoSession.Clone()
 	defer session.Close()
@@ -157,7 +157,7 @@ func Get_incomplete_transactions() []utils.Transaction {
 
 	var transactions []utils.Transaction
 
-	query := bson.M{"status": bson.M{"$lt": utils.BuyCompleted}}
+	query := bson.M{"status": bson.M{"$lt": utils.BalancesReset}}
 	err := collection.Find(query).All(&transactions)
 	utils.Check(err)
 
