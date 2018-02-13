@@ -353,10 +353,11 @@ func resume_transactions(transactions []utils.Transaction) {
 			check_if_bought(t.ID.Hex(), t.Token, t.Buy_exchange, t.Sell_exchange, t.Buy_tx_id)
 
 		case utils.BuyCompleted:
+			fmt.Println("have an order to reset")
 			exchange := strings.ToUpper(t.Sell_exchange)
 			destination := props[exchange+"_ETH_ADDRESS"]
 			// the fee is arbitrary for now but needs to be smarter
-			amount := float64(trade_quantity[token]) + 4
+			amount := float64(trade_quantity[t.Token]) + 4
 
 			reset(t.Token, t.Buy_exchange, destination, t.ID.Hex(), amount)
 
@@ -410,7 +411,7 @@ func start_transfer(row_id, token, sell_exchange, buy_exchange, destination stri
 		tx_id, started = binance.Start_transfer(token, destination, amount)
 
 	case "kucoin":
-		started = kucoin.Start_transfer(token, destination, amount)
+		tx_id, started = kucoin.Start_transfer(token, destination, amount)
 
 	case "bitz":
 		tx_id, started = bitz.Start_transfer(token, destination, amount)
@@ -512,7 +513,7 @@ func check_if_bought(row_id, token, buy_exchange, sell_exchange, buy_tx_id strin
 
 	}
 
-	if placed {
+	if bought {
 		mongo.Buy_order_completed(row_id)
 	}
 
@@ -665,20 +666,21 @@ func place_sell_order(token, exchange string, price float64) {
 func reset(token, buy_exchange, destination, row_id string, amount float64) {
 
 	is_reset := false
-
+	transaction_id := ""
+	fmt.Println("resetting")
 	switch buy_exchange {
 
 	case "binance":
-		is_reset = binance.Start_transfer(token, destination, amount)
+		transaction_id, is_reset = binance.Start_transfer(token, destination, amount)
 
 	case "kucoin":
-		is_reset = kucoin.Start_transfer(token, destination, amount)
+		transaction_id, is_reset = kucoin.Start_transfer(token, destination, amount)
 
 	case "bitz":
-		is_reset = bitz.Start_transfer(token, destination, amount)
+		transaction_id, is_reset = bitz.Start_transfer(token, destination, amount)
 
 	case "okex":
-		is_reset = okex.Start_transfer(token, destination, amount)
+		transaction_id, is_reset = okex.Start_transfer(token, destination, amount)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
@@ -686,7 +688,7 @@ func reset(token, buy_exchange, destination, row_id string, amount float64) {
 	}
 
 	if is_reset {
-		mongo.Token_reset_completed(row_id)
+		mongo.Token_reset_completed(row_id, transaction_id)
 	}
 
 }
