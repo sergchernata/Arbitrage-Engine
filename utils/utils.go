@@ -15,6 +15,7 @@ const (
 	TransferCompleted               // 3
 	BuyPlaced                       // 4
 	BuyCompleted                    // 5
+	BalancesReset                   // 6
 )
 
 type Transaction struct {
