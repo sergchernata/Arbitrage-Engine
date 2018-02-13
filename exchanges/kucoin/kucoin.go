@@ -240,7 +240,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 
 }
 
-func Start_transfer(token, destination string, amount float64) bool {
+func Start_transfer(token, destination string, amount float64) (string, bool) {
 
 	var params = fmt.Sprintf("address=%s&amount=%f&coin=%s", destination, amount, token)
 	var endpoint = "/v1/account/" + token + "/withdraw/apply"
@@ -254,10 +254,10 @@ func Start_transfer(token, destination string, amount float64) bool {
 	check(err)
 
 	if transfer.Success {
-		return true
+		return "", true
 	}
 
-	return false
+	return "", false
 
 }
 
