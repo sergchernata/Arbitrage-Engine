@@ -134,6 +134,20 @@ func Buy_order_completed(row_id string) {
 
 }
 
+func Token_reset_completed(row_id string) {
+
+	session := mgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(mgoDatabase).C("transactions")
+
+	query := bson.M{"_id": bson.ObjectIdHex(row_id)}
+	change := bson.M{"$set": bson.M{"status": utils.BalancesReset}}
+	err := collection.Update(query, change)
+	utils.Check(err)
+
+}
+
 func Get_incomplete_transactions() []utils.Transaction {
 
 	session := mgoSession.Clone()
