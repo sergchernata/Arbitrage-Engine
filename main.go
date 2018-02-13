@@ -352,6 +352,14 @@ func resume_transactions(transactions []utils.Transaction) {
 		case utils.BuyPlaced:
 			check_if_bought(t.ID.Hex(), t.Token, t.Buy_exchange, t.Sell_exchange, t.Buy_tx_id)
 
+		case utils.BuyCompleted:
+			exchange := strings.ToUpper(t.Sell_exchange)
+			destination := props[exchange+"_ETH_ADDRESS"]
+			// the fee is arbitrary for now but needs to be smarter
+			amount := float64(trade_quantity[token]) + 4
+
+			reset(t.Token, t.Buy_exchange, destination, t.ID.Hex(), amount)
+
 		default:
 			panic("Invalid transaction status.")
 
@@ -504,15 +512,8 @@ func check_if_bought(row_id, token, buy_exchange, sell_exchange, buy_tx_id strin
 
 	}
 
-	if bought {
-
-		exchange := strings.ToUpper(sell_exchange)
-		destination := props[exchange+"_ETH_ADDRESS"]
-		amount := float64(trade_quantity[token])
-
-		reset(token, buy_exchange, destination, amount)
+	if placed {
 		mongo.Buy_order_completed(row_id)
-
 	}
 
 }
@@ -661,25 +662,31 @@ func place_sell_order(token, exchange string, price float64) {
 }
 
 // final step in arbitrage process, send tokens back to origin
-func reset(token, buy_exchange, destination string, amount float64) {
+func reset(token, buy_exchange, destination, row_id string, amount float64) {
+
+	is_reset := false
 
 	switch buy_exchange {
 
 	case "binance":
-		binance.Start_transfer(token, destination, amount)
+		is_reset = binance.Start_transfer(token, destination, amount)
 
 	case "kucoin":
-		kucoin.Start_transfer(token, destination, amount)
+		is_reset = kucoin.Start_transfer(token, destination, amount)
 
 	case "bitz":
-		bitz.Start_transfer(token, destination, amount)
+		is_reset = bitz.Start_transfer(token, destination, amount)
 
 	case "okex":
-		okex.Start_transfer(token, destination, amount)
+		is_reset = okex.Start_transfer(token, destination, amount)
 
 	default:
 		panic("Exchange selection not provided or doesn't match available choices.")
 
+	}
+
+	if is_reset {
+		mongo.Token_reset_completed(row_id)
 	}
 
 }
