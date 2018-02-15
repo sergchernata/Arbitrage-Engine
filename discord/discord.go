@@ -25,6 +25,22 @@ var errors = map[string]string{
 	"db_error": "I failed to connect to database, I am ashamed",
 }
 
+var status = []string{
+	// movies
+	"Wolf of Wall Street",
+	"Capitalism: A Love Story",
+	"Boiler Room",
+	"Wall Street",
+	"Margin Call",
+	"The Big Short",
+	"Wall Street: Money Never Sleeps",
+	// songs
+	"Mo Money Mo Problems",
+	"Billionaire",
+	"C.R.E.A.M.",
+	"Rich Girl",
+}
+
 func Initialize(discord_auth_token, discord_bot_id, discord_channel_id string) {
 
 	fmt.Println("initializing discord package")
