@@ -34,11 +34,6 @@ var status = []string{
 	"Margin Call",
 	"The Big Short",
 	"Wall Street: Money Never Sleeps",
-	// songs
-	"Mo Money Mo Problems",
-	"Billionaire",
-	"C.R.E.A.M.",
-	"Rich Girl",
 }
 
 func Initialize(discord_auth_token, discord_bot_id, discord_channel_id string) {
