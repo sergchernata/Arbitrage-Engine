@@ -353,11 +353,10 @@ func resume_transactions(transactions []utils.Transaction) {
 			check_if_bought(t.ID.Hex(), t.Token, t.Buy_exchange, t.Sell_exchange, t.Buy_tx_id)
 
 		case utils.BuyCompleted:
-			fmt.Println("have an order to reset")
 			exchange := strings.ToUpper(t.Sell_exchange)
 			destination := props[exchange+"_ETH_ADDRESS"]
 			// the fee is arbitrary for now but needs to be smarter
-			amount := float64(trade_quantity[t.Token]) + 4
+			amount := float64(trade_quantity[t.Token] + 4)
 
 			reset(t.Token, t.Buy_exchange, destination, t.ID.Hex(), amount)
 
@@ -563,7 +562,7 @@ func compare_prices(exchange_prices map[string]map[string]float64, exclude map[s
 	}
 
 	// this is a pesonal method, notify me
-	discord.Send_messages(messages)
+	// discord.Send_messages(messages)
 
 	// notify discord subscribers
 	discord.Notify_discorders(comparisons)
@@ -667,7 +666,7 @@ func reset(token, buy_exchange, destination, row_id string, amount float64) {
 
 	is_reset := false
 	transaction_id := ""
-	fmt.Println("resetting")
+
 	switch buy_exchange {
 
 	case "binance":
