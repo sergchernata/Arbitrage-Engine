@@ -522,7 +522,7 @@ func check_if_bought(row_id, token, buy_exchange, sell_exchange, buy_tx_id strin
 // uses find_min_max_exchanges() on each token
 // if there is sufficient price gap, begins a transaction with sell()
 func compare_prices(exchange_prices map[string]map[string]float64, exclude map[string]bool) {
-
+	fmt.Println(len(tokens), len(exclude))
 	messages := make(map[string]string, len(tokens)-len(exclude))
 
 	for token := range tokens {
