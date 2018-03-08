@@ -354,12 +354,15 @@ func execute(method string, url string, endpoint string, params string) []byte {
 	utils.Check(err)
 
 	if res != nil {
+
 		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		utils.Check(err)
+
+		return body
+
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
-	utils.Check(err)
-
-	return body
-
+	return nil
 }
