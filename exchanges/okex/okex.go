@@ -353,7 +353,9 @@ func execute(method string, url string, endpoint string, params string) []byte {
 	res, err := client.Do(req)
 	utils.Check(err)
 
-	defer res.Body.Close()
+	if resp != nil {
+		defer res.Body.Close()
+	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	utils.Check(err)
