@@ -26,7 +26,6 @@ var errors = map[string]string{
 }
 
 var status = []string{
-	// movies
 	"Wolf of Wall Street",
 	"Capitalism: A Love Story",
 	"Boiler Room",

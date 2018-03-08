@@ -12,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	// utility
+	"../../utils"
 )
 
 var api_url, api_key, api_secret string
@@ -80,12 +83,6 @@ type Price struct {
 	Price  json.Number `json:"lastDealPrice,Number"`
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func Initialize(url, key, secret, eth_fee string) {
 
 	fmt.Println("initializing kucoin package")
@@ -152,7 +149,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 
 		if v.Price != "" {
 			price, err := strconv.ParseFloat(string(v.Price), 64)
-			check(err)
+			utils.Check(err)
 
 			if is_eth_pair && tokens[token] {
 				prices[token+"-ETH"] = price
@@ -208,7 +205,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	body = execute("POST", api_url, endpoint, params, true)
 
 	err := json.Unmarshal(body, &place_order)
-	check(err)
+	utils.Check(err)
 
 	if place_order.Data.Id == "" {
 		return "", false
@@ -230,7 +227,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	body = execute("GET", api_url, endpoint, params, true)
 
 	err := json.Unmarshal(body, &order)
-	check(err)
+	utils.Check(err)
 
 	if order.Data.PendingAmount == 0 {
 		return order.Data.DealValueTotal, true
@@ -251,7 +248,7 @@ func Start_transfer(token, destination string, amount float64) (string, bool) {
 	body = execute("POST", api_url, endpoint, params, true)
 
 	err := json.Unmarshal(body, &transfer)
-	check(err)
+	utils.Check(err)
 
 	if transfer.Success {
 		return "", true
@@ -272,7 +269,7 @@ func Check_if_transferred(sell_cost float64) bool {
 	body = execute("GET", api_url, endpoint, params, true)
 
 	err := json.Unmarshal(body, &deposits)
-	check(err)
+	utils.Check(err)
 
 	for _, deposit := range deposits.Data.List {
 		if deposit.Amount == sell_cost && deposit.Status == "SUCCESS" {
@@ -296,7 +293,7 @@ func Place_buy_order(token string, amount, price float64) (string, bool) {
 	body = execute("POST", api_url, endpoint, params, true)
 
 	err := json.Unmarshal(body, &place_order)
-	check(err)
+	utils.Check(err)
 
 	if place_order.Data.Id == "" {
 		return "", false
@@ -318,7 +315,7 @@ func Check_if_bought(token, buy_tx_id string) bool {
 	body = execute("GET", api_url, endpoint, params, true)
 
 	err := json.Unmarshal(body, &order)
-	check(err)
+	utils.Check(err)
 
 	if order.Data.PendingAmount == 0 {
 		return true
@@ -331,7 +328,7 @@ func Check_if_bought(token, buy_tx_id string) bool {
 func execute(method string, url string, endpoint string, params string, auth bool) []byte {
 
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
-	check(err)
+	utils.Check(err)
 
 	req.Header.Set("User-Agent", "test")
 	req.Header.Add("Accept", "application/json")
@@ -348,7 +345,7 @@ func execute(method string, url string, endpoint string, params string, auth boo
 
 		mac := hmac.New(sha256.New, []byte(api_secret))
 		_, err := mac.Write([]byte(signatureStr))
-		check(err)
+		utils.Check(err)
 
 		signature := hex.EncodeToString(mac.Sum(nil))
 
@@ -361,12 +358,12 @@ func execute(method string, url string, endpoint string, params string, auth boo
 	client := &http.Client{}
 
 	res, err := client.Do(req)
-	check(err)
+	utils.Check(err)
 
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
-	check(err)
+	utils.Check(err)
 
 	return body
 

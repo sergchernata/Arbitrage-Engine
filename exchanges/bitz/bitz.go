@@ -11,6 +11,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	// utility
+	"../../utils"
 )
 
 var api_url, api_key, api_secret, api_tradepw string
@@ -43,12 +46,6 @@ type Price struct {
 	Price  json.Number `json:"lastDealPrice,Number"`
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func Initialize(url, key, secret, tradepw, eth_fee string) {
 
 	fmt.Println("initializing bitz package")
@@ -76,7 +73,7 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 	// 	body = execute("GET", api_url, endpoint, params)
 
 	// 	err := json.Unmarshal(body, &data)
-	// 	check(err)
+	// 	utils.Check(err)
 
 	// 	holdings[data.Holding.Symbol] = data.Holding.Amount
 
@@ -97,7 +94,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	body = execute("GET", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &data)
-	check(err)
+	utils.Check(err)
 
 	all := data.(map[string]interface{})
 	allPrices := all["data"].(map[string]interface{})
@@ -114,7 +111,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		token := strings.TrimSuffix(symbol, "_ETH")
 		// TODO: throws error fmt.Println(details, reflect.TypeOf(details["last"]))
 		price, err := strconv.ParseFloat(details["last"].(string), 64)
-		check(err)
+		utils.Check(err)
 
 		if is_eth_pair && tokens[token] {
 			prices[token+"-ETH"] = price
@@ -136,7 +133,7 @@ func Get_listed_tokens() []string {
 	body = execute("GET", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &data)
-	check(err)
+	utils.Check(err)
 
 	all := data.(map[string]interface{})
 	allPrices := all["data"].(map[string]interface{})
@@ -176,7 +173,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &order)
-	check(err)
+	utils.Check(err)
 
 	if order.Data.Id == "" {
 		return "", false
@@ -228,19 +225,19 @@ func make_signature(params string) string {
 func execute(method string, url string, endpoint string, params string) []byte {
 
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
-	check(err)
+	utils.Check(err)
 
 	req.Header.Add("Accept", "application/json")
 
 	client := &http.Client{}
 
 	res, err := client.Do(req)
-	check(err)
+	utils.Check(err)
 
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
-	check(err)
+	utils.Check(err)
 
 	return body
 

@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	// utility
+	"../../utils"
 )
 
 var api_url, api_key, api_secret, api_tradepw string
@@ -70,12 +73,6 @@ type Prices struct {
 	Date string `json:"date"`
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func Initialize(url, key, secret, tradepw, eth_fee string) {
 
 	fmt.Println("initializing okex package")
@@ -113,7 +110,7 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 		if amount.(string) != "" {
 			token = strings.ToUpper(token)
 			amount, err := strconv.ParseFloat(amount.(string), 64)
-			check(err)
+			utils.Check(err)
 
 			if tokens[token] {
 				holdings[token] = amount
@@ -146,7 +143,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 
 		if data.Data.Last != "" {
 			price, err := strconv.ParseFloat(data.Data.Last, 64)
-			check(err)
+			utils.Check(err)
 
 			prices[token+"-ETH"] = price
 		}
@@ -197,7 +194,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &place_order)
-	check(err)
+	utils.Check(err)
 
 	if place_order.Success {
 		return place_order.Id.String(), true
@@ -222,7 +219,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &orders)
-	check(err)
+	utils.Check(err)
 
 	for _, order := range orders.List {
 		if order.Order_id.String() == sell_tx_id && order.Status == 2 {
@@ -237,7 +234,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 func Start_transfer(token, destination string, amount float64) (string, bool) {
 
 	var endpoint = "/withdraw.do"
-	var params = fmt.Sprintf("api_key=%s&chargefee=0.01&symbol=%s&target=address&trade_pwd=%s&withdraw_address=%s&withdraw_amount=%d",
+	var params = fmt.Sprintf("api_key=%s&chargefee=0.01&symbol=%s&target=address&trade_pwd=%s&withdraw_address=%s&withdraw_amount=%f",
 		api_key, token+"_ETH", api_tradepw, destination, amount)
 	var signature = make_signature(params + "&secret_key=" + api_secret)
 	var transfer = new(Place_transfer)
@@ -249,7 +246,7 @@ func Start_transfer(token, destination string, amount float64) (string, bool) {
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &transfer)
-	check(err)
+	utils.Check(err)
 
 	if transfer.Success == false {
 		return "", false
@@ -273,7 +270,7 @@ func Check_if_transferred(sell_cost float64) bool {
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &deposits)
-	check(err)
+	utils.Check(err)
 
 	for _, deposit := range deposits.List {
 		if deposit.Amount == sell_cost && deposit.Status == 1 {
@@ -300,7 +297,7 @@ func Place_buy_order(token string, amount, price float64) (string, bool) {
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &place_order)
-	check(err)
+	utils.Check(err)
 
 	if place_order.Success {
 		return place_order.Id.String(), true
@@ -324,7 +321,7 @@ func Check_if_bought(token, buy_tx_id string) bool {
 	body = execute("POST", api_url, endpoint, params)
 
 	err := json.Unmarshal(body, &orders)
-	check(err)
+	utils.Check(err)
 
 	for _, order := range orders.List {
 		if order.Order_id.String() == buy_tx_id && order.Status == 2 {
@@ -347,19 +344,19 @@ func make_signature(params string) string {
 func execute(method string, url string, endpoint string, params string) []byte {
 
 	req, err := http.NewRequest(method, url+endpoint+"?"+params, nil)
-	check(err)
+	utils.Check(err)
 
 	req.Header.Add("Accept", "application/json")
 
 	client := &http.Client{}
 
 	res, err := client.Do(req)
-	check(err)
+	utils.Check(err)
 
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
-	check(err)
+	utils.Check(err)
 
 	return body
 

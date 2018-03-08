@@ -2,7 +2,9 @@ package utils
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"log"
 	"math"
+	"os"
 	"time"
 )
 
@@ -91,9 +93,24 @@ type Listed struct {
 	Updated time.Time
 }
 
+func main() {
+	if !FileExists("log") {
+		CreateFile("log")
+	}
+}
+
 func Check(e error) {
 	if e != nil {
-		panic(e)
+
+		f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			panic("couldn't open log file")
+		}
+		defer f.Close()
+
+		log.SetOutput(f)
+		log.Println(e.Error())
+
 	}
 }
 
@@ -141,4 +158,24 @@ func Merge_uniques(temp ...[]string) []string {
 
 	return unique
 
+}
+
+func FileExists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func CreateFile(name string) error {
+	fo, err := os.Create(name)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		fo.Close()
+	}()
+	return nil
 }

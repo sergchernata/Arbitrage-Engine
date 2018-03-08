@@ -11,6 +11,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	// utility
+	"../../utils"
 )
 
 var api_url, api_key, api_secret string
@@ -67,12 +70,6 @@ type Prices []struct {
 	Price  string `json:"price"`
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func Initialize(url, key, secret, eth_fee string) {
 
 	fmt.Println("initializing binance package")
@@ -95,14 +92,14 @@ func Get_balances(tokens map[string]bool) map[string]float64 {
 	body = execute("GET", api_url+endpoint, true)
 
 	err := json.Unmarshal(body, &data)
-	check(err)
+	utils.Check(err)
 
 	// remove tokens that we don't care about
 	for _, v := range data.Holdings {
 
 		symbol := v.Symbol
 		amount, err := strconv.ParseFloat(v.Amount, 64)
-		check(err)
+		utils.Check(err)
 
 		if tokens[symbol] {
 			holdings[symbol] = amount
@@ -124,7 +121,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 	body = execute("GET", api_url+endpoint, false)
 
 	err := json.Unmarshal(body, &data)
-	check(err)
+	utils.Check(err)
 
 	// parse data and format for return
 	for _, v := range *data {
@@ -135,7 +132,7 @@ func Get_price(tokens map[string]bool) map[string]float64 {
 		is_eth_pair := strings.HasSuffix(symbol, "ETH")
 		token := strings.TrimSuffix(symbol, "ETH")
 		price, err := strconv.ParseFloat(v.Price, 64)
-		check(err)
+		utils.Check(err)
 
 		if is_eth_pair && tokens[token] {
 			prices[token+"-ETH"] = price
@@ -156,7 +153,7 @@ func Get_listed_tokens() []string {
 	body = execute("GET", api_url+endpoint, false)
 
 	err := json.Unmarshal(body, &data)
-	check(err)
+	utils.Check(err)
 
 	// parse data and format for return
 	for _, v := range *data {
@@ -186,7 +183,7 @@ func Place_sell_order(token string, quantity int, price float64) (transaction_id
 	body = execute("POST", api_url+endpoint, true)
 
 	err := json.Unmarshal(body, &place_order)
-	check(err)
+	utils.Check(err)
 
 	if place_order.Id == "" {
 		return "", false
@@ -207,7 +204,7 @@ func Check_if_sold(token, sell_tx_id string) (float64, bool) {
 	body = execute("GET", api_url+endpoint, true)
 
 	err := json.Unmarshal(body, &order)
-	check(err)
+	utils.Check(err)
 
 	if order.OrigQty != 0 && order.OrigQty == order.ExecutedQty {
 		return order.OrigQty * order.Price, true
@@ -227,7 +224,7 @@ func Start_transfer(token, destination string, amount float64) (string, bool) {
 	body = execute("POST", api_url+endpoint, true)
 
 	err := json.Unmarshal(body, &transfer)
-	check(err)
+	utils.Check(err)
 
 	if transfer.Id == "" {
 		return "", false
@@ -247,7 +244,7 @@ func Check_if_transferred(sell_cost float64) bool {
 	body = execute("GET", api_url+endpoint, true)
 
 	err := json.Unmarshal(body, &deposits)
-	check(err)
+	utils.Check(err)
 
 	for _, d := range deposits.List {
 		if d.Amount == sell_cost {
@@ -270,7 +267,7 @@ func Place_buy_order(token string, quantity, price float64) (string, bool) {
 	body = execute("POST", api_url+endpoint, true)
 
 	err := json.Unmarshal(body, &place_order)
-	check(err)
+	utils.Check(err)
 
 	if place_order.Id == "" {
 		return "", false
@@ -291,7 +288,7 @@ func Check_if_bought(token, buy_tx_id string) bool {
 	body = execute("GET", api_url+endpoint, true)
 
 	err := json.Unmarshal(body, &order)
-	check(err)
+	utils.Check(err)
 
 	if order.OrigQty != 0 && order.OrigQty == order.ExecutedQty {
 		return true
@@ -304,7 +301,7 @@ func Check_if_bought(token, buy_tx_id string) bool {
 func execute(method string, url string, auth bool) []byte {
 
 	req, err := http.NewRequest(method, url, nil)
-	check(err)
+	utils.Check(err)
 
 	req.Header.Set("User-Agent", "test")
 	req.Header.Add("Accept", "application/json")
@@ -320,7 +317,7 @@ func execute(method string, url string, auth bool) []byte {
 
 		mac := hmac.New(sha256.New, []byte(api_secret))
 		_, err := mac.Write([]byte(q.Encode()))
-		check(err)
+		utils.Check(err)
 
 		signature := hex.EncodeToString(mac.Sum(nil))
 		req.URL.RawQuery = q.Encode() + "&signature=" + signature
@@ -329,12 +326,12 @@ func execute(method string, url string, auth bool) []byte {
 	client := &http.Client{}
 
 	res, err := client.Do(req)
-	check(err)
+	utils.Check(err)
 
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
-	check(err)
+	utils.Check(err)
 
 	return body
 
