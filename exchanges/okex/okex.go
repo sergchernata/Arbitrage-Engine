@@ -353,7 +353,7 @@ func execute(method string, url string, endpoint string, params string) []byte {
 	res, err := client.Do(req)
 	utils.Check(err)
 
-	if resp != nil {
+	if res != nil {
 		defer res.Body.Close()
 	}
 
